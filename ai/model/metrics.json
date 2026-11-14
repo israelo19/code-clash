@@ -1,0 +1,156 @@
+{
+  "headline": {
+    "model_mae_dollars": 39.79,
+    "baseline_mae_dollars": 44.72,
+    "mae_improvement_pct": 11.0,
+    "app_range_coverage_pct": 86.7
+  },
+  "model": {
+    "mae_dollars": 39.79,
+    "median_pct_error": 16.2,
+    "range_coverage_pct": 77.7,
+    "avg_range_width_dollars": 122.35
+  },
+  "baseline": {
+    "mae_dollars": 44.72,
+    "median_pct_error": 19.1,
+    "range_coverage_pct": 80.4,
+    "avg_range_width_dollars": 137.63
+  },
+  "app_default_range": {
+    "test_rows": 1645,
+    "model": {
+      "mae_dollars": 36.78,
+      "median_pct_error": 16.1,
+      "range_coverage_pct": 86.7,
+      "avg_range_width_dollars": 133.48
+    },
+    "baseline": {
+      "mae_dollars": 37.64,
+      "median_pct_error": 17.7,
+      "range_coverage_pct": 84.1,
+      "avg_range_width_dollars": 124.87
+    }
+  },
+  "per_service": {
+    "99213": {
+      "service": "Office visit, established patient",
+      "test_rows": 1971,
+      "model": {
+        "mae_dollars": 41.29,
+        "median_pct_error": 16.2,
+        "range_coverage_pct": 78.4,
+        "avg_range_width_dollars": 131.08
+      },
+      "baseline": {
+        "mae_dollars": 46.41,
+        "median_pct_error": 18.1,
+        "range_coverage_pct": 78.6,
+        "avg_range_width_dollars": 145.66
+      }
+    },
+    "99203": {
+      "service": "Office visit, new patient",
+      "test_rows": 746,
+      "model": {
+        "mae_dollars": 53.88,
+        "median_pct_error": 16.2,
+        "range_coverage_pct": 77.2,
+        "avg_range_width_dollars": 155.33
+      },
+      "baseline": {
+        "mae_dollars": 60.36,
+        "median_pct_error": 18.3,
+        "range_coverage_pct": 81.0,
+        "avg_range_width_dollars": 180.0
+      }
+    },
+    "87880": {
+      "service": "Rapid strep test",
+      "test_rows": 120,
+      "model": {
+        "mae_dollars": 9.5,
+        "median_pct_error": 15.0,
+        "range_coverage_pct": 68.3,
+        "avg_range_width_dollars": 29.02
+      },
+      "baseline": {
+        "mae_dollars": 11.97,
+        "median_pct_error": 31.0,
+        "range_coverage_pct": 90.8,
+        "avg_range_width_dollars": 33.0
+      }
+    },
+    "87804": {
+      "service": "Rapid flu test",
+      "test_rows": 131,
+      "model": {
+        "mae_dollars": 10.68,
+        "median_pct_error": 18.8,
+        "range_coverage_pct": 77.9,
+        "avg_range_width_dollars": 30.94
+      },
+      "baseline": {
+        "mae_dollars": 11.44,
+        "median_pct_error": 26.9,
+        "range_coverage_pct": 91.6,
+        "avg_range_width_dollars": 34.43
+      }
+    },
+    "90471": {
+      "service": "Vaccine administration",
+      "test_rows": 57,
+      "model": {
+        "mae_dollars": 11.76,
+        "median_pct_error": 21.3,
+        "range_coverage_pct": 75.4,
+        "avg_range_width_dollars": 37.09
+      },
+      "baseline": {
+        "mae_dollars": 12.28,
+        "median_pct_error": 27.7,
+        "range_coverage_pct": 80.7,
+        "avg_range_width_dollars": 36.3
+      }
+    },
+    "85025": {
+      "service": "Complete blood count",
+      "test_rows": 127,
+      "model": {
+        "mae_dollars": 5.07,
+        "median_pct_error": 8.5,
+        "range_coverage_pct": 78.7,
+        "avg_range_width_dollars": 13.99
+      },
+      "baseline": {
+        "mae_dollars": 6.41,
+        "median_pct_error": 9.2,
+        "range_coverage_pct": 84.3,
+        "avg_range_width_dollars": 15.0
+      }
+    }
+  },
+  "about": {
+    "target": "Average submitted charge per provider and service (billed to Medicare)",
+    "data": "CMS Medicare Physician & Other Practitioners by Provider and Service, Maryland",
+    "model": "scikit-learn HistGradientBoostingRegressor, quantile loss at 0.1, 0.5, 0.9, on log(charge)",
+    "baseline": "Median charge per service code, range = 10th to 90th percentile per code",
+    "features": [
+      "code",
+      "provider_type",
+      "place",
+      "zip3"
+    ],
+    "split": "20% of providers held out, grouped by provider so none appear in both sets",
+    "rows": {
+      "train": 12619,
+      "test": 3152
+    },
+    "providers": {
+      "train": 7761,
+      "test": 1941
+    },
+    "trained_on": "2026-11-14",
+    "scikit_learn_version": "1.9.1"
+  }
+}
