@@ -15,11 +15,13 @@ export default function Upload() {
   const [preview, setPreview] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "reading" | "done">("idle");
   const [result, setResult] = useState<HealthDocument | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const pick = (f: File | undefined) => {
     if (!f) return;
     setFile(f);
     setResult(null);
+    setError(null);
     setStatus("idle");
     setPreview(f.type.startsWith("image/") ? URL.createObjectURL(f) : null);
   };
@@ -27,9 +29,16 @@ export default function Upload() {
   const read = async () => {
     if (!file) return;
     setStatus("reading");
-    const doc = await uploadAndExtract(DEMO_USERS.patient.id, file);
-    setResult(doc);
-    setStatus("done");
+    setError(null);
+    try {
+      const doc = await uploadAndExtract(DEMO_USERS.patient.id, file);
+      setResult(doc);
+      setStatus("done");
+    } catch (problem) {
+      // The document reader could not read the file, or the AI service is not running.
+      setError((problem as Error).message);
+      setStatus("idle");
+    }
   };
 
   return (
@@ -66,6 +75,12 @@ export default function Upload() {
         <Button onClick={read} className="mt-4 w-full">
           Read and file this document
         </Button>
+      )}
+
+      {error && (
+        <Card className="mt-4 border-rose-200 bg-rose-50 text-sm text-rose-900">
+          <strong>That didn&apos;t work.</strong> {error}
+        </Card>
       )}
 
       {status === "reading" && (

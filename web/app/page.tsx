@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { Card, ChatBubble, TypeBadge } from "@/components/ui";
-import { SETTINGS, estimateCost, resetDemoData, serviceLabel } from "@/lib/api";
+import { costOptions, resetDemoData, serviceLabel } from "@/lib/api";
 import { APP_NAME, NOT_A_DOCTOR_LINE } from "@/lib/config";
 import { DEMO_USERS } from "@/lib/mockData";
 import { signIn } from "@/lib/session";
@@ -272,8 +272,8 @@ function CardLink({ onClick, children }: { onClick: () => void; children: React.
 }
 
 // The pink card in the middle: a small live cost check.
-// Tapping a service asks lib/api.ts for an estimate at each care setting, the same call the full Costs screen makes.
-// So when the real cost model is connected in lib/api.ts, this card shows its numbers with no change here.
+// Tapping a service asks lib/api.ts for the price options near Towson, the same call the full Costs screen makes:
+// the estimate for the area, then known clinics nearby. The numbers come from the trained cost model.
 function CostPreview({ onOpen }: { onOpen: () => void }) {
   const [code, setCode] = useState(PREVIEW_SERVICES[0].code);
   // The latest answer, saved together with the service code it belongs to.
@@ -283,7 +283,7 @@ function CostPreview({ onOpen }: { onOpen: () => void }) {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all(SETTINGS.map((setting) => estimateCost(code, setting, PREVIEW_ZIP)))
+    costOptions(code, PREVIEW_ZIP)
       .then((list) => {
         if (!cancelled) setResult({ code, estimates: list });
       })
@@ -298,9 +298,9 @@ function CostPreview({ onOpen }: { onOpen: () => void }) {
   }, [code]);
 
   const estimates = result?.estimates ?? [];
-  // The cheapest place to go is the one with the lowest typical price.
+  // The cheapest option is the one with the lowest typical price.
   const cheapest = estimates.length > 0 ? estimates.reduce((a, b) => (b.typical < a.typical ? b : a)) : null;
-  // The longest bar belongs to the most expensive setting. The other bars are drawn relative to it.
+  // The longest bar belongs to the most expensive option. The other bars are drawn relative to it.
   const maxHigh = Math.max(1, ...estimates.map((e) => e.high));
 
   return (
@@ -340,17 +340,17 @@ function CostPreview({ onOpen }: { onOpen: () => void }) {
                 ${cheapest.low}–${cheapest.high}
               </div>
               <div className="mt-1 text-xs">
-                {serviceLabel(cheapest.service_code)} · Lowest: {cheapest.setting}
+                {serviceLabel(cheapest.service_code)} · Lowest: {cheapest.label}
               </div>
             </div>
 
             <div className="mt-4 rounded-2xl bg-white p-4 text-slate-700">
               <ul className="flex flex-col gap-2.5">
                 {estimates.map((e) => (
-                  <li key={e.setting}>
-                    <div className="flex justify-between text-xs">
-                      <span className="font-medium">{e.setting}</span>
-                      <span className="text-slate-500">
+                  <li key={e.label}>
+                    <div className="flex justify-between gap-2 text-xs">
+                      <span className="truncate font-medium">{e.label}</span>
+                      <span className="shrink-0 text-slate-500">
                         ${e.low}–${e.high}
                       </span>
                     </div>

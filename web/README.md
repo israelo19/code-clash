@@ -1,15 +1,27 @@
 # Web app (Workstream A)
 
 Next.js + TypeScript + Tailwind. Responsive: bottom tabs on phones, sidebar on laptops.
-Runs entirely on mock data right now, so the whole demo loop clicks through before the backend and AI service exist.
+Documents, upload, the companion chat and cost estimates call the real AI service in `../ai` (which uses the trained
+cost model). Share codes, the access log and clinician notes are still kept in the browser until the backend routes exist.
 
 ## Run it
+
+Start the AI service first, in its own terminal (see `../ai/README.md`). It must be on port 8000:
+
+```bash
+cd ai
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+Then the web app:
 
 ```bash
 cd web
 npm install
 npm run dev
 ```
+
+If the AI service is hosted somewhere else, set `NEXT_PUBLIC_AI_URL` to its address before `npm run dev` or `npm run build`.
 
 Open http://localhost:3000. To test on your phone, open `http://<your-laptop-ip>:3000` on the same Wi-Fi, or deploy to Vercel.
 
@@ -27,7 +39,7 @@ Open http://localhost:3000. To test on your phone, open `http://<your-laptop-ip>
 | `app/patient/page.tsx` | Patient dashboard and records timeline |
 | `app/patient/upload/` | Photo or file upload, then the parsed record |
 | `app/patient/records/[id]/` | One record with its plain-language summary |
-| `app/patient/cost/` | Cost estimate ranges by care setting |
+| `app/patient/cost/` | Cost estimate for the area, plus known clinics nearby, cheapest first |
 | `app/patient/chat/` | Companion chat with the "not a doctor" line |
 | `app/patient/share/` | Create expiring share codes and view the access log |
 | `app/clinician/` | Enter a share code |
@@ -35,8 +47,8 @@ Open http://localhost:3000. To test on your phone, open `http://<your-laptop-ip>
 | `components/AppShell.tsx` | Navigation, role check |
 | `components/ui.tsx` | Cards, timeline item, cost range card, chat bubble |
 | `lib/types.ts` | Data shapes. Agree on these with B, C and D |
-| `lib/api.ts` | **The only file to change when the real backend is ready** |
-| `lib/mockData.ts` | Synthetic demo data |
+| `lib/api.ts` | Every call to the AI service, and the browser-kept share codes. **The file to change when the backend routes are ready** |
+| `lib/mockData.ts` | Demo accounts, the service list, the seeded share code |
 | `lib/config.ts` | App name, companion name, disclaimer text |
 
 ## Connecting the real backend
