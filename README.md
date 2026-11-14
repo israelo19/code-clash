@@ -64,8 +64,23 @@ Sign in as the patient (the details are filled in), then try Costs, Companion, U
 (`data/demo/sample_visit_summary.png`) and Share. Sign in as the clinician in another tab or on another device
 and enter the share code. "Reset demo data" at the bottom of the landing page puts everything back.
 
+## What we used
+
+Everything here was written during CODE/CLASH 2026 on November 14, 2026. What we did not write ourselves:
+
+- **Dataset:** CMS, "Medicare Physician & Other Practitioners by Provider and Service", 2024, filtered to Maryland. It trains the cost model. https://data.cms.gov/provider-summary-by-type-of-service/medicare-physician-other-practitioners/medicare-physician-other-practitioners-by-provider-and-service
+- **Demo records:** synthetic, made for the demo (`data/sample_records.json`, `data/demo/`). No real patient data.
+- **APIs:** Anthropic Claude API (companion chat and document reader), CMS open data API (the data pull).
+- **Web app libraries:** Next.js, React, Tailwind CSS, TypeScript, ESLint.
+- **Backend libraries:** Express, cors, dotenv, node-device-detector, nodemon. The database is SQLite, built into Node.
+- **AI service libraries:** FastAPI, Uvicorn, the Anthropic Python SDK, python-dotenv, python-multipart, Pillow, pillow-heif.
+- **Cost model libraries:** scikit-learn, pandas, joblib, requests, matplotlib, pytest.
+- **AI tools:** Claude Code helped write and debug code across the project (the cost model, the database layer and connecting the services) and helped research sources for the video and slides. Every teammate can explain the code in their part.
+
 ## More
 
+- `docs/VIDEO_SCRIPT.md`: the demo video script, with every source we cite.
+- `docs/DEVPOST.md`: the text for our Devpost page.
 - `docs/PROJECT_BRIEF.md`: what we set out to build.
 - `docs/DECISIONS.md`: how the cost model was built and tested, the data it uses, and the tools used (including AI tools).
 - `docs/brand/LOGO_PROFILE.md`: the logo.
