@@ -34,12 +34,14 @@ SERVICES = {
     "85025": "Complete blood count",
 }
 
-# We keep only the columns the model needs. Provider names and street addresses
-# are dropped; the NPI stays because the train/test split is done by provider.
+# We keep only the columns the model needs. Provider names are dropped. The NPI
+# stays because the train/test split is done by provider, and the street address
+# stays because providers at the same address turn out to bill the same prices.
 KEEP_COLUMNS = [
     "Rndrng_NPI",
     "Rndrng_Prvdr_Type",
     "Rndrng_Prvdr_Ent_Cd",
+    "Rndrng_Prvdr_St1",
     "Rndrng_Prvdr_City",
     "Rndrng_Prvdr_Zip5",
     "HCPCS_Cd",
