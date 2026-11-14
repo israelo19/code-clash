@@ -3,9 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
+import { Logo } from "@/components/Logo";
 import { Card, ChatBubble, TypeBadge } from "@/components/ui";
 import { costOptions, resetDemoData, serviceLabel } from "@/lib/api";
-import { APP_NAME, NOT_A_DOCTOR_LINE } from "@/lib/config";
+import { NOT_A_DOCTOR_LINE } from "@/lib/config";
 import { DEMO_USERS } from "@/lib/mockData";
 import { signIn } from "@/lib/session";
 import type { ChatMessage, Estimate, Role } from "@/lib/types";
@@ -99,10 +100,7 @@ export default function Login() {
 
       {/* Menu bar. The pill-shaped menu in the middle is hidden on phones. */}
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
-        <div className="flex items-center gap-2 text-white">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-pink-500 text-lg font-semibold">+</span>
-          <span className="text-lg font-semibold tracking-tight">{APP_NAME}</span>
-        </div>
+        <Logo tone="light" />
         <nav className="hidden items-center gap-1 rounded-full border border-white/25 bg-white/10 p-1 text-sm text-white backdrop-blur md:flex">
           <button onClick={() => scrollTo("top")} className="rounded-full bg-white/20 px-4 py-1.5">
             Home
