@@ -1,0 +1,466 @@
+{
+  "headline": {
+    "baseline_mae_dollars": 44.72,
+    "area_model_mae_dollars": 39.79,
+    "final_model_mae_dollars": 34.93,
+    "final_vs_baseline_improvement_pct": 21.9,
+    "clinic_in_data_share_pct": 71.7,
+    "clinic_in_data_baseline_mae_dollars": 43.27,
+    "clinic_in_data_final_mae_dollars": 32.11,
+    "clinic_in_data_final_median_pct_error": 8.2
+  },
+  "provider_type_known": {
+    "all_held_out": {
+      "test_rows": 3152,
+      "baseline": {
+        "mae_dollars": 44.72,
+        "median_pct_error": 19.1,
+        "range_coverage_pct": 80.4,
+        "avg_range_width_dollars": 137.63
+      },
+      "area_model": {
+        "mae_dollars": 39.79,
+        "median_pct_error": 16.2,
+        "range_coverage_pct": 77.7,
+        "avg_range_width_dollars": 122.35
+      },
+      "final_model": {
+        "mae_dollars": 34.93,
+        "median_pct_error": 11.5,
+        "range_coverage_pct": 76.2,
+        "avg_range_width_dollars": 101.29
+      }
+    },
+    "clinic_in_data": {
+      "test_rows": 2259,
+      "baseline": {
+        "mae_dollars": 43.27,
+        "median_pct_error": 18.1,
+        "range_coverage_pct": 82.5,
+        "avg_range_width_dollars": 136.51
+      },
+      "area_model": {
+        "mae_dollars": 38.89,
+        "median_pct_error": 15.0,
+        "range_coverage_pct": 78.0,
+        "avg_range_width_dollars": 121.0
+      },
+      "final_model": {
+        "mae_dollars": 32.11,
+        "median_pct_error": 8.2,
+        "range_coverage_pct": 76.0,
+        "avg_range_width_dollars": 91.62
+      }
+    },
+    "clinic_not_in_data": {
+      "test_rows": 893,
+      "baseline": {
+        "mae_dollars": 48.38,
+        "median_pct_error": 25.0,
+        "range_coverage_pct": 75.3,
+        "avg_range_width_dollars": 140.49
+      },
+      "area_model": {
+        "mae_dollars": 42.07,
+        "median_pct_error": 19.2,
+        "range_coverage_pct": 76.8,
+        "avg_range_width_dollars": 125.77
+      },
+      "final_model": {
+        "mae_dollars": 42.07,
+        "median_pct_error": 19.2,
+        "range_coverage_pct": 76.8,
+        "avg_range_width_dollars": 125.77
+      }
+    }
+  },
+  "what_the_app_shows": {
+    "primary_care": {
+      "test_rows": 1645,
+      "baseline": {
+        "mae_dollars": 37.64,
+        "median_pct_error": 17.7,
+        "range_coverage_pct": 84.1,
+        "avg_range_width_dollars": 124.87
+      },
+      "area_estimate": {
+        "mae_dollars": 36.78,
+        "median_pct_error": 16.1,
+        "range_coverage_pct": 86.7,
+        "avg_range_width_dollars": 133.48
+      },
+      "final_estimate": {
+        "mae_dollars": 31.27,
+        "median_pct_error": 10.9,
+        "range_coverage_pct": 83.9,
+        "avg_range_width_dollars": 110.05
+      }
+    },
+    "primary_care_clinic_in_data": {
+      "test_rows": 1162,
+      "baseline": {
+        "mae_dollars": 36.36,
+        "median_pct_error": 16.7,
+        "range_coverage_pct": 85.4,
+        "avg_range_width_dollars": 122.95
+      },
+      "area_estimate": {
+        "mae_dollars": 36.02,
+        "median_pct_error": 15.3,
+        "range_coverage_pct": 87.8,
+        "avg_range_width_dollars": 131.86
+      },
+      "final_estimate": {
+        "mae_dollars": 28.21,
+        "median_pct_error": 7.1,
+        "range_coverage_pct": 83.8,
+        "avg_range_width_dollars": 98.68
+      }
+    },
+    "primary_care_clinic_not_in_data": {
+      "test_rows": 483,
+      "baseline": {
+        "mae_dollars": 40.73,
+        "median_pct_error": 21.9,
+        "range_coverage_pct": 81.0,
+        "avg_range_width_dollars": 129.49
+      },
+      "area_estimate": {
+        "mae_dollars": 38.64,
+        "median_pct_error": 18.1,
+        "range_coverage_pct": 84.1,
+        "avg_range_width_dollars": 137.38
+      },
+      "final_estimate": {
+        "mae_dollars": 38.64,
+        "median_pct_error": 18.1,
+        "range_coverage_pct": 84.1,
+        "avg_range_width_dollars": 137.38
+      }
+    },
+    "per_service": {
+      "99213": {
+        "service": "Office visit, established patient",
+        "test_rows": 983,
+        "baseline": {
+          "mae_dollars": 42.93,
+          "median_pct_error": 15.2,
+          "range_coverage_pct": 82.0,
+          "avg_range_width_dollars": 145.66
+        },
+        "area_estimate": {
+          "mae_dollars": 42.13,
+          "median_pct_error": 15.6,
+          "range_coverage_pct": 85.1,
+          "avg_range_width_dollars": 154.02
+        },
+        "final_estimate": {
+          "mae_dollars": 36.38,
+          "median_pct_error": 11.3,
+          "range_coverage_pct": 83.1,
+          "avg_range_width_dollars": 129.53
+        }
+      },
+      "99203": {
+        "service": "Office visit, new patient",
+        "test_rows": 283,
+        "baseline": {
+          "mae_dollars": 56.14,
+          "median_pct_error": 16.5,
+          "range_coverage_pct": 84.5,
+          "avg_range_width_dollars": 180.0
+        },
+        "area_estimate": {
+          "mae_dollars": 54.94,
+          "median_pct_error": 15.9,
+          "range_coverage_pct": 88.7,
+          "avg_range_width_dollars": 196.09
+        },
+        "final_estimate": {
+          "mae_dollars": 46.7,
+          "median_pct_error": 12.3,
+          "range_coverage_pct": 83.4,
+          "avg_range_width_dollars": 157.99
+        }
+      },
+      "87880": {
+        "service": "Rapid strep test",
+        "test_rows": 115,
+        "baseline": {
+          "mae_dollars": 11.97,
+          "median_pct_error": 31.0,
+          "range_coverage_pct": 90.4,
+          "avg_range_width_dollars": 33.0
+        },
+        "area_estimate": {
+          "mae_dollars": 10.47,
+          "median_pct_error": 15.4,
+          "range_coverage_pct": 91.3,
+          "avg_range_width_dollars": 35.56
+        },
+        "final_estimate": {
+          "mae_dollars": 7.04,
+          "median_pct_error": 10.2,
+          "range_coverage_pct": 85.2,
+          "avg_range_width_dollars": 23.84
+        }
+      },
+      "87804": {
+        "service": "Rapid flu test",
+        "test_rows": 125,
+        "baseline": {
+          "mae_dollars": 11.04,
+          "median_pct_error": 26.9,
+          "range_coverage_pct": 92.0,
+          "avg_range_width_dollars": 34.43
+        },
+        "area_estimate": {
+          "mae_dollars": 10.47,
+          "median_pct_error": 20.6,
+          "range_coverage_pct": 88.0,
+          "avg_range_width_dollars": 34.71
+        },
+        "final_estimate": {
+          "mae_dollars": 7.62,
+          "median_pct_error": 12.6,
+          "range_coverage_pct": 84.8,
+          "avg_range_width_dollars": 26.03
+        }
+      },
+      "90471": {
+        "service": "Vaccine administration",
+        "test_rows": 52,
+        "baseline": {
+          "mae_dollars": 12.61,
+          "median_pct_error": 28.3,
+          "range_coverage_pct": 80.8,
+          "avg_range_width_dollars": 36.3
+        },
+        "area_estimate": {
+          "mae_dollars": 11.6,
+          "median_pct_error": 17.6,
+          "range_coverage_pct": 82.7,
+          "avg_range_width_dollars": 43.04
+        },
+        "final_estimate": {
+          "mae_dollars": 9.53,
+          "median_pct_error": 11.3,
+          "range_coverage_pct": 84.6,
+          "avg_range_width_dollars": 38.66
+        }
+      },
+      "85025": {
+        "service": "Complete blood count",
+        "test_rows": 87,
+        "baseline": {
+          "mae_dollars": 4.79,
+          "median_pct_error": 5.4,
+          "range_coverage_pct": 88.5,
+          "avg_range_width_dollars": 15.0
+        },
+        "area_estimate": {
+          "mae_dollars": 4.97,
+          "median_pct_error": 13.1,
+          "range_coverage_pct": 92.0,
+          "avg_range_width_dollars": 23.1
+        },
+        "final_estimate": {
+          "mae_dollars": 2.35,
+          "median_pct_error": 0.5,
+          "range_coverage_pct": 90.8,
+          "avg_range_width_dollars": 11.31
+        }
+      }
+    }
+  },
+  "per_service": {
+    "99213": {
+      "service": "Office visit, established patient",
+      "test_rows": 1971,
+      "baseline": {
+        "mae_dollars": 46.41,
+        "median_pct_error": 18.1,
+        "range_coverage_pct": 78.6,
+        "avg_range_width_dollars": 145.66
+      },
+      "area_model": {
+        "mae_dollars": 41.29,
+        "median_pct_error": 16.2,
+        "range_coverage_pct": 78.4,
+        "avg_range_width_dollars": 131.08
+      },
+      "final_model": {
+        "mae_dollars": 36.17,
+        "median_pct_error": 11.5,
+        "range_coverage_pct": 75.4,
+        "avg_range_width_dollars": 107.94
+      }
+    },
+    "99203": {
+      "service": "Office visit, new patient",
+      "test_rows": 746,
+      "baseline": {
+        "mae_dollars": 60.36,
+        "median_pct_error": 18.3,
+        "range_coverage_pct": 81.0,
+        "avg_range_width_dollars": 180.0
+      },
+      "area_model": {
+        "mae_dollars": 53.88,
+        "median_pct_error": 16.2,
+        "range_coverage_pct": 77.2,
+        "avg_range_width_dollars": 155.33
+      },
+      "final_model": {
+        "mae_dollars": 48.05,
+        "median_pct_error": 12.1,
+        "range_coverage_pct": 77.3,
+        "avg_range_width_dollars": 131.37
+      }
+    },
+    "87880": {
+      "service": "Rapid strep test",
+      "test_rows": 120,
+      "baseline": {
+        "mae_dollars": 11.97,
+        "median_pct_error": 31.0,
+        "range_coverage_pct": 90.8,
+        "avg_range_width_dollars": 33.0
+      },
+      "area_model": {
+        "mae_dollars": 9.5,
+        "median_pct_error": 15.0,
+        "range_coverage_pct": 68.3,
+        "avg_range_width_dollars": 29.02
+      },
+      "final_model": {
+        "mae_dollars": 6.96,
+        "median_pct_error": 8.8,
+        "range_coverage_pct": 75.0,
+        "avg_range_width_dollars": 20.38
+      }
+    },
+    "87804": {
+      "service": "Rapid flu test",
+      "test_rows": 131,
+      "baseline": {
+        "mae_dollars": 11.44,
+        "median_pct_error": 26.9,
+        "range_coverage_pct": 91.6,
+        "avg_range_width_dollars": 34.43
+      },
+      "area_model": {
+        "mae_dollars": 10.68,
+        "median_pct_error": 18.8,
+        "range_coverage_pct": 77.9,
+        "avg_range_width_dollars": 30.94
+      },
+      "final_model": {
+        "mae_dollars": 8.76,
+        "median_pct_error": 14.7,
+        "range_coverage_pct": 78.6,
+        "avg_range_width_dollars": 23.58
+      }
+    },
+    "90471": {
+      "service": "Vaccine administration",
+      "test_rows": 57,
+      "baseline": {
+        "mae_dollars": 12.28,
+        "median_pct_error": 27.7,
+        "range_coverage_pct": 80.7,
+        "avg_range_width_dollars": 36.3
+      },
+      "area_model": {
+        "mae_dollars": 11.76,
+        "median_pct_error": 21.3,
+        "range_coverage_pct": 75.4,
+        "avg_range_width_dollars": 37.09
+      },
+      "final_model": {
+        "mae_dollars": 9.22,
+        "median_pct_error": 11.7,
+        "range_coverage_pct": 77.2,
+        "avg_range_width_dollars": 33.39
+      }
+    },
+    "85025": {
+      "service": "Complete blood count",
+      "test_rows": 127,
+      "baseline": {
+        "mae_dollars": 6.41,
+        "median_pct_error": 9.2,
+        "range_coverage_pct": 84.3,
+        "avg_range_width_dollars": 15.0
+      },
+      "area_model": {
+        "mae_dollars": 5.07,
+        "median_pct_error": 8.5,
+        "range_coverage_pct": 78.7,
+        "avg_range_width_dollars": 13.99
+      },
+      "final_model": {
+        "mae_dollars": 3.56,
+        "median_pct_error": 1.0,
+        "range_coverage_pct": 80.3,
+        "avg_range_width_dollars": 8.57
+      }
+    }
+  },
+  "visit_totals": {
+    "all_visit_plus_addon_pairs": {
+      "pairs": 561,
+      "mae_dollars": 26.03,
+      "median_pct_error": 5.5,
+      "range_coverage_pct": 97.3,
+      "avg_range_width_dollars": 148.65
+    },
+    "visit_plus_strep_test": {
+      "pairs": 190,
+      "mae_dollars": 26.42,
+      "median_pct_error": 5.8,
+      "range_coverage_pct": 97.9,
+      "avg_range_width_dollars": 149.32
+    }
+  },
+  "clinic_price_consistency": {
+    "median_gap_from_statewide_price_pct": 19.5,
+    "median_gap_from_same_clinic_price_pct": 0.2,
+    "rows_at_a_clinic_with_2_or_more_rows_for_the_service": 8449,
+    "clinics_in_training_data": 3573
+  },
+  "about": {
+    "target": "Average submitted charge per provider and service (billed to Medicare)",
+    "data": "CMS Medicare Physician & Other Practitioners by Provider and Service, 2024, Maryland",
+    "model": "scikit-learn HistGradientBoostingRegressor, quantile loss at 0.1, 0.5, 0.9, on log(charge)",
+    "baseline": "Median charge per service code, range = 10th to 90th percentile per code",
+    "area_model_features": [
+      "code",
+      "provider_type",
+      "place",
+      "zip3"
+    ],
+    "clinic_model_features": [
+      "code",
+      "provider_type",
+      "place",
+      "zip3",
+      "clinic_level",
+      "clinic_same_code",
+      "clinic_rows"
+    ],
+    "final_model": "Clinic model when the clinic is in the training data, area model otherwise",
+    "clinic": "Providers that share a street address and ZIP",
+    "split": "20% of providers held out, grouped by provider so none appear in both sets",
+    "rows": {
+      "train": 12619,
+      "test": 3152
+    },
+    "providers": {
+      "train": 7761,
+      "test": 1941
+    },
+    "trained_on": "2026-11-14",
+    "scikit_learn_version": "1.9.1"
+  }
+}

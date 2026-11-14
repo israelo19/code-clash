@@ -1,0 +1,138 @@
+{
+  "method": "4-fold cross-validation grouped by provider, on the 12619 training rows only. The held-out test set is not used.",
+  "baseline": {
+    "step": "Baseline: median price per service",
+    "mae_dollars": 43.2,
+    "median_pct_error": 18.05
+  },
+  "progression": [
+    {
+      "step": "Service code only",
+      "features": [
+        "code"
+      ],
+      "mae_dollars": 43.2,
+      "median_pct_error": 18.06,
+      "baseline_mae_dollars": 43.2,
+      "baseline_median_pct_error": 18.05,
+      "range_coverage_pct": 80.13
+    },
+    {
+      "step": "+ office or facility",
+      "features": [
+        "code",
+        "place"
+      ],
+      "mae_dollars": 43.11,
+      "median_pct_error": 18.46,
+      "baseline_mae_dollars": 43.2,
+      "baseline_median_pct_error": 18.05,
+      "range_coverage_pct": 80.19
+    },
+    {
+      "step": "+ region (first 3 ZIP digits)",
+      "features": [
+        "code",
+        "place",
+        "zip3"
+      ],
+      "mae_dollars": 41.59,
+      "median_pct_error": 17.38,
+      "baseline_mae_dollars": 43.2,
+      "baseline_median_pct_error": 18.05,
+      "range_coverage_pct": 79.09
+    },
+    {
+      "step": "+ provider type",
+      "features": [
+        "code",
+        "provider_type",
+        "place",
+        "zip3"
+      ],
+      "mae_dollars": 39.0,
+      "median_pct_error": 15.72,
+      "baseline_mae_dollars": 43.2,
+      "baseline_median_pct_error": 18.05,
+      "range_coverage_pct": 77.91
+    },
+    {
+      "step": "+ the clinic's own price level",
+      "features": [
+        "code",
+        "provider_type",
+        "place",
+        "zip3",
+        "clinic_level",
+        "clinic_same_code",
+        "clinic_rows"
+      ],
+      "mae_dollars": 33.22,
+      "median_pct_error": 11.58,
+      "baseline_mae_dollars": 43.2,
+      "baseline_median_pct_error": 18.05,
+      "range_coverage_pct": 77.26
+    }
+  ],
+  "not_kept": [
+    {
+      "idea": "Full 5-digit ZIP as an extra feature",
+      "mae_dollars": 38.34,
+      "median_pct_error": 15.11,
+      "baseline_mae_dollars": 43.2,
+      "baseline_median_pct_error": 18.05,
+      "range_coverage_pct": 78.25,
+      "change_vs_area_model_pct": -1.7
+    },
+    {
+      "idea": "Deeper trees (depth 6 instead of 4)",
+      "mae_dollars": 38.57,
+      "median_pct_error": 15.36,
+      "baseline_mae_dollars": 43.2,
+      "baseline_median_pct_error": 18.05,
+      "range_coverage_pct": 76.97,
+      "change_vs_area_model_pct": -1.1
+    },
+    {
+      "idea": "Twice as many boosting rounds (600)",
+      "mae_dollars": 38.82,
+      "median_pct_error": 15.66,
+      "baseline_mae_dollars": 43.2,
+      "baseline_median_pct_error": 18.05,
+      "range_coverage_pct": 77.49,
+      "change_vs_area_model_pct": -0.5
+    }
+  ],
+  "learning_curve": [
+    {
+      "share_of_training_providers": 0.1,
+      "baseline_mae_dollars": 43.3,
+      "area_model_mae_dollars": 42.08,
+      "clinic_model_mae_dollars": 41.29
+    },
+    {
+      "share_of_training_providers": 0.25,
+      "baseline_mae_dollars": 43.26,
+      "area_model_mae_dollars": 40.6,
+      "clinic_model_mae_dollars": 38.13
+    },
+    {
+      "share_of_training_providers": 0.5,
+      "baseline_mae_dollars": 43.21,
+      "area_model_mae_dollars": 39.54,
+      "clinic_model_mae_dollars": 35.72
+    },
+    {
+      "share_of_training_providers": 0.75,
+      "baseline_mae_dollars": 43.2,
+      "area_model_mae_dollars": 39.22,
+      "clinic_model_mae_dollars": 34.25
+    },
+    {
+      "share_of_training_providers": 1.0,
+      "baseline_mae_dollars": 43.2,
+      "area_model_mae_dollars": 39.0,
+      "clinic_model_mae_dollars": 33.22
+    }
+  ]
+}
