@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { APP_NAME } from "@/lib/config";
 import { currentUser, signOut } from "@/lib/session";
 import type { Role, User } from "@/lib/types";
 import { Icon } from "./Icon";
+import { Logo } from "./Logo";
 
 const NAV: Record<Role, { href: string; label: string; icon: string }[]> = {
   patient: [
@@ -48,7 +48,9 @@ export function AppShell({ role, children }: { role: Role; children: React.React
     <div className="flex min-h-dvh flex-col md:flex-row">
       {/* Sidebar, laptop */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-slate-200 bg-white p-4 md:flex">
-        <div className="mb-6 px-2 text-lg font-semibold text-teal-700">{APP_NAME}</div>
+        <div className="mb-6 px-2">
+          <Logo />
+        </div>
         <nav className="flex flex-1 flex-col gap-1">
           {items.map((it) => (
             <Link
@@ -74,7 +76,7 @@ export function AppShell({ role, children }: { role: Role; children: React.React
 
       {/* Top bar, phone */}
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur md:hidden">
-        <span className="font-semibold text-teal-700">{APP_NAME}</span>
+        <Logo />
         <button onClick={logout} className="text-xs text-slate-500">
           {user.name} · Switch
         </button>
