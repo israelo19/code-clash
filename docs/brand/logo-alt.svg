@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="t">
+  <title id="t">CareVault alternate mark: talking page</title>
+  <!-- A page with a folded corner that is also a speech bubble. The two text lines are cut out. -->
+  <path fill="#0f766e" fill-rule="evenodd" d="M15 4H39.500Q42 4 43.800 5.800L58.200 20.200Q60 22 60 24.500V39A11 11 0 0 1 49 50H18L7.200 59.300Q4 62 4 57.800V15A11 11 0 0 1 15 4ZM17 22H37A3 3 0 0 1 37 28H17A3 3 0 0 1 17 22ZM17 34H28A3 3 0 0 1 28 40H17A3 3 0 0 1 17 34Z"/>
+  <path fill="#134e4a" d="M42 4.520Q42.970 4.970 43.800 5.800L58.200 20.200Q59.030 21.030 59.480 22H46A4 4 0 0 1 42 18Z"/>
+</svg>

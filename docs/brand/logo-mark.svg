@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="t">
+  <title id="t">CareVault</title>
+  <!-- Page with a folded corner; the keyhole is cut out so the background shows through. -->
+  <path fill="#0f766e" fill-rule="evenodd" d="M17 4H39.500Q42 4 43.800 5.800L58.200 20.200Q60 22 60 24.500V47A13 13 0 0 1 47 60H17A13 13 0 0 1 4 47V17A13 13 0 0 1 17 4ZM31 20A8 8 0 0 0 27 34.930L24.200 46.400Q23.600 49 26.200 49H35.800Q38.400 49 37.800 46.400L35 34.930A8 8 0 0 0 31 20Z"/>
+  <!-- Folded corner -->
+  <path fill="#134e4a" d="M42 4.520Q42.970 4.970 43.800 5.800L58.200 20.200Q59.030 21.030 59.480 22H46A4 4 0 0 1 42 18Z"/>
+</svg>
