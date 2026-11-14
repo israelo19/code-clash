@@ -4,6 +4,19 @@ Backend and data. Written Saturday November 14, 2:00 PM. Feature freeze is 4:00 
 
 "Teammate 3" is a placeholder. Put their name in.
 
+## Update, 2:35 PM: Israel's part is built
+
+Read this first. It changes a few things below.
+
+- **Done and tested:** `server/db.js` (the database and all its functions), `server/routes/upload.js` (photo upload), and the real cost model behind the AI service's `/estimate`.
+- **The demo accounts are `u_maya` and `u_lee`,** not `maya` and `dr_rivera`. They match the accounts the web app already signs in with (`web/lib/mockData.ts`). The examples below are updated.
+- **Nothing to install for the database or the upload.** `db.js` uses the SQLite built into Node 22.5 and newer, and the upload route needs no extra package. Skip `npm install better-sqlite3 multer` unless your Node is older than 22.5; then install `better-sqlite3` only.
+- **Two extra database functions:** `getDocument(id)` and `listShares(patientId)`, because the web app asks for both.
+- **A share code `DEMO01` is seeded** and never expires, because the clinician screen tells testers to try it.
+- **Molly, to switch the upload on,** add one line to the server's main file: `app.use("/api", require("./server/routes/upload"));` (drop `./server` from the path once the file has moved into `server/`).
+- **The web app now exists** in `web/`, so Teammate 3's "two demo pages" task is replaced: connect `web/lib/api.ts` to the routes instead. That file was written to be swapped, one function per route.
+- **Port clash:** the Express server and the web app both default to port 3000. Run Express on 4000.
+
 **Part B is done when** a clinician account opens a shared record by code and the view shows up in the patient's access log.
 
 ## Where things stand
@@ -47,19 +60,21 @@ The database is SQLite through the `better-sqlite3` package, with the five table
 | `listUsers()` | every user: `id`, `role`, `name` |
 | `getUser(id)` | one user, or `undefined` |
 | `listDocuments(patientId)` | the patient's documents, newest first |
+| `getDocument(id)` | one document, or `undefined` |
 | `getDocuments(ids)` | the documents with those ids |
 | `addDocument(patientId, record)` | the saved document, with its new `id` |
 | `createShare({ code, patientId, documentIds, expiresAt })` | the saved share |
-| `getShare(code)` | the share, or `undefined` |
+| `getShare(code)` | the share, or `undefined`. It does not check expiry; the route does. |
+| `listShares(patientId)` | the patient's shares, latest expiry first |
 | `logAccess({ shareCode, viewerId, documentId })` | nothing |
-| `listAccessLog(patientId)` | rows of `viewed_at`, `viewer_name`, `document_id`, `document_type`, `share_code`, newest first |
+| `listAccessLog(patientId)` | rows of `id`, `share_code`, `viewer_id`, `viewer_name`, `document_id`, `document_type`, `viewed_at`, newest first |
 | `addNote({ patientId, clinicianId, text })` | the saved note |
 | `listNotes(patientId)` | the patient's notes, newest first |
 | `reset()` | puts everything back to the seed |
 
 - Rows come back with the column names from the brief, for example `patient_id` and `expires_at`. `fields` and `document_ids` are already parsed, not JSON text.
 - Every time is a UTC string from `new Date().toISOString()`.
-- Seeded users: `maya` (role `patient`) and `dr_rivera` (role `clinician`).
+- Seeded users: `u_maya` (role `patient`, Maya Johnson) and `u_lee` (role `clinician`, Dr. Sam Lee).
 - Seeded documents: Maya's three records from `data/sample_records.json`.
 
 ### Routes
@@ -67,7 +82,7 @@ The database is SQLite through the `better-sqlite3` package, with the five table
 | Route | Owner | In | Out |
 | --- | --- | --- | --- |
 | `POST /api/shares` | Molly | `patient_id`, `document_ids`, `minutes` (default 15) | `code`, `expires_at`, `document_ids` |
-| `GET /api/shares/:code?viewer_id=dr_rivera` | Molly | nothing | `patient`, `expires_at`, `documents`. Also writes the access log. |
+| `GET /api/shares/:code?viewer_id=u_lee` | Molly | nothing | `patient`, `expires_at`, `documents`. Also writes the access log. |
 | `GET /api/patients/:id/access-log` | Molly | nothing | the rows from `listAccessLog` |
 | `POST /api/notes`, `GET /api/patients/:id/notes` | Molly | `share_code`, `clinician_id`, `text` | the saved note, and the patient's notes. Nice to have. |
 | `GET /api/users` | Teammate 3 | nothing | the two demo accounts, for the role switch |
@@ -119,7 +134,7 @@ Error replies for opening a share: 404 for a code that does not exist, 410 for a
    - Write every function in the contract table above. Each is two to four lines: `db.prepare(sql).run(...)` to write, `.get(...)` for one row, `.all(...)` for many.
    - `listAccessLog` is the one real query: join `access_log` to `shares` to find the patient's rows, and to `users` and `documents` for the names.
    - It is a new file, so it merges cleanly as soon as Molly's skeleton is in `main`. Do not edit `package.json`; Molly's skeleton already installs `better-sqlite3`.
-   - Check: `node -e "console.log(require('./db').listDocuments('maya').length)"` prints 3.
+   - Check: `node -e "console.log(require('./db').listDocuments('u_maya').length)"` prints 3.
 2. **Merge `cost-model` into `main` and push.** `.gitignore` and `ai/requirements.txt` conflict because both branches created them. Keep the lines from both sides in each. Check: `python -m pytest ai/tests` passes.
 3. **Wire the trained model into `/estimate`.** Replace the inside of `estimate()` in `ai/estimate_stub.py` with a call to `model.predict.estimate`, and take the service list from the model so the TB test disappears. Keep the output keys the companion reads (`service_code`, `service`, `low`, `typical`, `high`, `caveat`). Check: ask the companion "how much is a strep test" and the reply no longer says PLACEHOLDER.
 4. **Bridge the photo upload.** `POST /api/patients/:id/documents` in `routes/upload.js`.
@@ -135,7 +150,7 @@ Error replies for opening a share: 404 for a code that does not exist, 410 for a
    - Follow "Run it" in `ai/README.md` to start the Python service on port 8000. Leave the API key empty; mock mode is enough.
    - Once the skeleton is in `main`: `git pull`, `cd server`, `npm install`, `npm run dev`.
 2. **Bridge the estimate.** `POST /api/estimate` in `routes/ai.js`. Read the Python address from an `AI_URL` setting that defaults to `http://localhost:8000`, forward the request body to `AI_URL/estimate` with `fetch`, and return the reply. It needs no database, so it can be tested right away. Check: `curl -X POST localhost:3000/api/estimate -H "Content-Type: application/json" -d '{"service_code":"87880"}'` returns a price range.
-3. **Demo accounts, timeline and reset.** In `routes/patients.js`, three short routes that each return one database function: `GET /api/users` returns `listUsers()`, `GET /api/patients/:id/documents` returns `listDocuments(id)`, and `POST /api/reset` calls `reset()`. Check: the timeline returns three documents for `maya`.
+3. **Demo accounts, timeline and reset.** In `routes/patients.js`, three short routes that each return one database function: `GET /api/users` returns `listUsers()`, `GET /api/patients/:id/documents` returns `listDocuments(id)`, and `POST /api/reset` calls `reset()`. Check: the timeline returns three documents for `u_maya`.
 4. **Bridge the chat.** `POST /api/chat` in `routes/ai.js`. Call `listDocuments(patient_id)`, then post `message`, `patient_id`, `history` and those documents as `records` to `AI_URL/chat`. Check: a question about the immunization record names `doc_imm001` in `used_records`.
 5. **Two demo pages, if nobody else is building the front end.** Plain HTML files in `server/public/`, which the Express server serves.
    - A patient page: list the timeline with a checkbox per document, a "Share" button that calls `POST /api/shares` and shows the code, and the access log underneath.
@@ -145,9 +160,9 @@ Error replies for opening a share: 404 for a code that does not exist, 410 for a
 
 ```
 curl -X POST localhost:3000/api/shares -H "Content-Type: application/json" \
-     -d '{"patient_id":"maya","document_ids":["doc_imm001"],"minutes":15}'
-curl "localhost:3000/api/shares/THECODE?viewer_id=dr_rivera"
-curl localhost:3000/api/patients/maya/access-log
+     -d '{"patient_id":"u_maya","document_ids":["doc_imm001"],"minutes":15}'
+curl "localhost:3000/api/shares/THECODE?viewer_id=u_lee"
+curl localhost:3000/api/patients/u_maya/access-log
 ```
 
 ## Schedule

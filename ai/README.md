@@ -24,11 +24,11 @@ labeled "MOCK". The web team can build against it right away.
 
 | File | What it does |
 | --- | --- |
-| `main.py` | The endpoints: `/extract`, `/estimate`, `/chat`, plus `/health` and `/records/{patient_id}` |
+| `main.py` | The endpoints: `/extract`, `/estimate`, `/clinics`, `/services`, `/chat`, plus `/health` and `/records/{patient_id}` |
 | `extract.py` | Document reader. Sends the photo to Claude and forces a `save_record` tool call, so the output is always clean JSON |
 | `companion.py` | Companion agent. The system prompt holds the rules, and the agent loop runs the two tools |
 | `records.py` | Stores records in `../data/sample_records.json` and does a simple keyword search |
-| `estimate_stub.py` | Placeholder prices. **Workstream D replaces the inside of `estimate()` with the trained model** |
+| `estimate_stub.py` | Cost estimates from the trained model in `model/` (workstream D). The file name is left over from the placeholder |
 | `llm.py` | The only file that talks to the LLM API |
 
 ## Endpoints (for the web team)
@@ -39,13 +39,32 @@ labeled "MOCK". The web team can build against it right away.
  "fields": {"result": "Positive for strep"}, "summary": "..."}
 ```
 
-**POST /estimate**
+**POST /estimate**: real numbers from the trained cost model
 ```json
-// in
-{"service_code": "87880", "setting": "office", "zip_code": "21252"}
+// in: one service...
+{"service_code": "87880", "setting": "office", "zip_code": "21204"}
 // out
-{"service_code": "87880", "service": "Rapid strep test", "low": 21, "typical": 35, "high": 63, "caveat": "..."}
+{"service_code": "87880", "service": "Rapid strep test", "setting": "office", "zip3": "212",
+ "low": 18, "typical": 50, "high": 58, "based_on": "area", "caveat": "..."}
+
+// in: ...or a whole visit. Visits: office, strep, flu, blood_count, vaccine
+{"visit": "strep", "zip_code": "21204", "new_patient": true}
+// out
+{"visit": "Sore throat visit with a rapid strep test", "items": [ ...one per service... ],
+ "total": {"low": 187, "typical": 319, "high": 434}, "based_on": "area", "caveat": "..."}
 ```
+- `setting` is `office` or `facility`. `Campus health center`, `Retail clinic` and `Urgent care` are accepted and
+  treated as `office`, because the data cannot tell them apart. `Emergency room` returns a 404 with the reason.
+- Add `"clinic": "<id>"` to price one clinic from the list below. The answer then says `"based_on": "clinic"`.
+- An unknown service code or visit returns a 404.
+
+**GET /clinics?service_code=87880&zip_code=21204&limit=5**: known clinics nearby, cheapest first
+```json
+[{"clinic": {"id": "...", "address": "600 E Belvedere Ave Ste A", "city": "Baltimore", "zip": "21212", "providers_in_data": 2},
+  "service_code": "87880", "low": 15, "typical": 20, "high": 52, "based_on": "clinic", "caveat": "..."}]
+```
+
+**GET /services**: the services and visits the model can price, for menus
 
 **POST /chat**
 ```json
