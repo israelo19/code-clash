@@ -7,7 +7,15 @@ export const DEMO_USERS: Record<"patient" | "clinician", User> = {
   clinician: { id: "u_lee", role: "clinician", name: "Dr. Sam Lee" },
 };
 
-// No longer shown in the app: the timeline now comes from the AI service, which starts from
+// Sign-in details for the two demo accounts above. They are made up for the demo: not real accounts,
+// not real passwords. The sign-in page fills them in, and checkLogin() in lib/api.ts checks against them.
+// (".example" is a web address ending reserved for examples, so these emails can never belong to anyone.)
+export const DEMO_LOGINS: Record<"patient" | "clinician", { email: string; password: string }> = {
+  patient: { email: "maya.johnson@carevault.example", password: "towson-demo-2026" },
+  clinician: { email: "sam.lee@carevault.example", password: "towson-demo-2026" },
+};
+
+// No longer shown in the app: the timeline now comes from the backend's database, which starts from
 // data/sample_records.json. Kept as a reference for the document shape.
 export const SEED_DOCUMENTS: HealthDocument[] = [
   {

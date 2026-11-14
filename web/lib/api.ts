@@ -2,17 +2,19 @@
 
 // How the screens reach the rest of the system. Every screen goes through these functions.
 //
-// CONNECTED TO THE REAL AI SERVICE (ai/main.py, port 8000):
-//   documents and upload   GET /records/{patient}   POST /extract
-//   companion chat         POST /chat               (it searches the records and calls the cost model)
-//   cost estimates         POST /estimate           GET /clinics      (the trained cost model)
+// THE BACKEND (App.js at the repo root, port 4000) keeps the data in its database:
+//   timeline and upload    GET /api/patients/:id/documents     POST /api/patients/:id/documents
+//   share codes            POST /api/shares                    GET /api/shares/:code
+//   access log and notes   GET /api/patients/:id/access-log    GET /api/patients/:id/notes   POST /api/notes
 //
-// STILL KEPT IN THIS BROWSER, until Part B's backend routes exist:
-//   share codes, the access log and clinician notes.
-//   They work between two tabs of the same browser, but not between two devices.
-//   Each of those functions names the backend route that will replace it.
+// THE AI SERVICE (ai/main.py, port 8000) does the thinking:
+//   companion chat         POST /chat          (it searches the records and calls the cost model)
+//   cost estimates         POST /estimate      GET /clinics      (the trained cost model)
+//   The document reader (POST /extract) is called by the backend during an upload, not from here.
+//
+// Sign-in is still the two demo accounts, checked in the browser (checkLogin below).
 
-import { DEMO_USERS, SEED_SHARES, SERVICES } from "./mockData";
+import { DEMO_LOGINS, DEMO_USERS, SERVICES } from "./mockData";
 import type {
   AccessLogEntry,
   ChatMessage,
@@ -21,44 +23,70 @@ import type {
   DocumentType,
   Estimate,
   HealthDocument,
+  Role,
   Share,
+  User,
 } from "./types";
 
-// ---------- talking to the AI service
+// ---------- talking to the two services
 
-// Where the AI service runs. Set NEXT_PUBLIC_AI_URL when it is hosted somewhere else.
-// The default is port 8000 on the machine this page came from, so a phone on the
-// same Wi-Fi as the laptop reaches the laptop's AI service too.
-function aiUrl() {
-  if (process.env.NEXT_PUBLIC_AI_URL) return process.env.NEXT_PUBLIC_AI_URL;
-  const host = typeof window === "undefined" ? "localhost" : window.location.hostname;
-  return `http://${host}:8000`;
+// Where each service runs. The defaults are ports 4000 and 8000 on the machine this page
+// came from, so a phone on the same Wi-Fi as the laptop reaches the laptop's services too.
+// Set NEXT_PUBLIC_API_URL and NEXT_PUBLIC_AI_URL when they are hosted somewhere else.
+const SERVICES_AT = {
+  backend: { name: "backend", port: 4000, url: process.env.NEXT_PUBLIC_API_URL },
+  ai: { name: "AI service", port: 8000, url: process.env.NEXT_PUBLIC_AI_URL },
+};
+
+// A failed request. `status` is the HTTP status code, or 0 when the service did not answer at all.
+class RequestError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
 }
 
-// One request to the AI service. Throws an Error with a readable message when it fails.
-async function ai<T>(path: string, init?: RequestInit): Promise<T> {
+// One request to a service. Throws a RequestError with a readable message when it fails.
+async function call<T>(service: keyof typeof SERVICES_AT, path: string, init?: RequestInit): Promise<T> {
+  const { name, port, url } = SERVICES_AT[service];
+  const host = typeof window === "undefined" ? "localhost" : window.location.hostname;
   let reply: Response;
   try {
-    reply = await fetch(aiUrl() + path, init);
+    reply = await fetch((url || `http://${host}:${port}`) + path, init);
   } catch {
-    throw new Error("Can't reach the AI service. Is it running on port 8000?");
+    throw new RequestError(`Can't reach the ${name}. Is it running on port ${port}?`, 0);
   }
   if (!reply.ok) {
+    // The backend explains errors in "error", the AI service in "detail".
     const body = await reply.json().catch(() => null);
-    throw new Error(typeof body?.detail === "string" ? body.detail : `The AI service answered with error ${reply.status}.`);
+    const reason = body?.error ?? body?.detail;
+    throw new RequestError(typeof reason === "string" ? reason : `The ${name} answered with error ${reply.status}.`, reply.status);
   }
   return (await reply.json()) as T;
 }
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
-// The web app calls the demo patient "u_maya". The AI service files her records under "maya".
-const aiPatientId = (patientId: string) => patientId.replace(/^u_/, "");
+const post = (body: unknown): RequestInit => ({ method: "POST", headers: JSON_HEADERS, body: JSON.stringify(body) });
 
-// ---------- documents (real: AI service)
+// ---------- sign-in (demo accounts, checked in the browser)
 
-// A record the way the AI service stores it.
-type AiRecord = {
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Checks an email and password for the sign-in page. Returns the user, or null if they don't match.
+// It compares them with the two seeded demo accounts in mockData.ts. Real sign-up is cut for today.
+export async function checkLogin(role: Role, email: string, password: string): Promise<User | null> {
+  await wait(600);
+  const demo = DEMO_LOGINS[role];
+  const matches = email.trim().toLowerCase() === demo.email && password === demo.password;
+  return matches ? DEMO_USERS[role] : null;
+}
+
+// ---------- documents (backend database)
+
+// A record the way the backend stores it, which is the way the document reader wrote it.
+type StoredRecord = {
   id: string;
   type: string; // e.g. "visit_summary"
   date: string;
@@ -76,7 +104,13 @@ const TYPE_LABELS: Record<string, DocumentType> = {
   prescription: "Prescription",
 };
 
-function toDocument(record: AiRecord, patientId: string): HealthDocument {
+// The document reader names fields like "read_date". The screens show "Read date".
+function fieldLabel(key: string) {
+  const words = key.replace(/_/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+function toDocument(record: StoredRecord, patientId: string): HealthDocument {
   return {
     id: record.id,
     patient_id: patientId,
@@ -84,15 +118,17 @@ function toDocument(record: AiRecord, patientId: string): HealthDocument {
     date: record.date || new Date().toISOString().slice(0, 10),
     provider: record.provider || "Unknown provider",
     summary: record.summary || "",
-    fields: record.fields ?? {},
+    fields: Object.fromEntries(Object.entries(record.fields ?? {}).map(([key, value]) => [fieldLabel(key), String(value)])),
   };
 }
 
-// The patient's timeline, newest first. If the AI service is down this returns an
+const storedRecords = (patientId: string) => call<StoredRecord[]>("backend", `/api/patients/${patientId}/documents`);
+
+// The patient's timeline, newest first. If the backend is down this returns an
 // empty list, so a screen shows "no records" and not a crash.
 export async function listDocuments(patientId: string): Promise<HealthDocument[]> {
   try {
-    const records = await ai<AiRecord[]>(`/records/${aiPatientId(patientId)}`);
+    const records = await storedRecords(patientId);
     return records.map((r) => toDocument(r, patientId)).sort((a, b) => b.date.localeCompare(a.date));
   } catch (problem) {
     console.error(problem);
@@ -105,150 +141,99 @@ export async function getDocument(id: string): Promise<HealthDocument | null> {
   return documents.find((d) => d.id === id) ?? null;
 }
 
-// Send the photo or PDF to the document reader. It reads it, files it on the
-// patient's timeline and returns the record. Throws if the file can't be read.
+// Send the photo or PDF to the backend. It passes the file to the document reader, saves
+// the record on the patient's timeline and returns it. Throws if the file can't be read.
 export async function uploadAndExtract(patientId: string, file: File): Promise<HealthDocument> {
   const form = new FormData();
   form.append("file", file);
-  form.append("patient_id", aiPatientId(patientId)); // tells the AI service to save it too
-  const record = await ai<AiRecord>("/extract", { method: "POST", body: form });
+  const record = await call<StoredRecord>("backend", `/api/patients/${patientId}/documents`, { method: "POST", body: form });
   return toDocument(record, patientId);
 }
 
-// ---------- shares, access log and notes (still in this browser)
-
-type LocalStore = {
-  notes: ClinicianNote[];
-  shares: Share[];
-  accessLog: AccessLogEntry[];
-};
-
-// localStorage is shared by every tab of one browser, so a patient tab and a
-// clinician tab see the same share codes.
-const STORE_KEY = "local_store_v2";
-
-function emptyStore(): LocalStore {
-  return { notes: [], shares: [...SEED_SHARES], accessLog: [] };
-}
-
-function load(): LocalStore {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return JSON.parse(raw) as LocalStore;
-  } catch {}
-  return emptyStore();
-}
-
-function save(store: LocalStore) {
-  try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(store));
-  } catch {}
-}
-
-const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const newId = (prefix: string) => `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
-
-// Before a demo run: forget this browser's shares and notes, and ask the AI
-// service to drop uploaded documents and go back to the starting records.
+// Before a demo run: the backend drops uploads, share codes, notes and the access log,
+// and goes back to the starting records.
 export function resetDemoData() {
-  save(emptyStore());
   chatHistory.length = 0;
-  ai("/reset", { method: "POST" }).catch(console.error);
+  call("backend", "/api/reset", { method: "POST" }).catch(console.error);
 }
 
-// Backend route to come: GET /api/patients/:id/notes
+// ---------- clinician notes (backend database)
+
 export async function listNotes(patientId: string): Promise<ClinicianNote[]> {
-  await wait(100);
-  return load()
-    .notes.filter((n) => n.patient_id === patientId)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  try {
+    return await call<ClinicianNote[]>("backend", `/api/patients/${patientId}/notes`);
+  } catch (problem) {
+    console.error(problem);
+    return [];
+  }
 }
 
-// Backend route to come: POST /api/notes
 export async function addNote(patientId: string, clinicianId: string, text: string): Promise<ClinicianNote> {
-  await wait(300);
-  const note: ClinicianNote = {
-    id: newId("n"),
-    patient_id: patientId,
-    clinician_id: clinicianId,
-    clinician_name: DEMO_USERS.clinician.name,
-    text,
-    created_at: new Date().toISOString(),
-  };
-  const store = load();
-  store.notes.push(note);
-  save(store);
-  return note;
+  return call<ClinicianNote>("backend", "/api/notes", post({ patient_id: patientId, clinician_id: clinicianId, text }));
 }
 
-function makeCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O or 1/I, easier to read aloud
-  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-}
+// ---------- share codes and the access log (backend database)
 
-// Backend route to come: POST /api/shares
+// The backend makes the code. It refuses documents that are not this patient's.
 export async function createShare(patientId: string, documentIds: string[], minutes: number): Promise<Share> {
-  await wait(300);
-  const share: Share = {
-    code: makeCode(),
-    patient_id: patientId,
-    document_ids: documentIds,
-    expires_at: new Date(Date.now() + minutes * 60_000).toISOString(),
-  };
-  const store = load();
-  store.shares.push(share);
-  save(store);
-  return share;
+  return call<Share>("backend", "/api/shares", post({ patient_id: patientId, document_ids: documentIds, minutes }));
 }
 
+// The patient's own codes. DEMO01 is a built-in code for trying the clinician side, so it is not listed.
 export async function listShares(patientId: string): Promise<Share[]> {
-  await wait(100);
-  return load()
-    .shares.filter((s) => s.patient_id === patientId && s.code !== "DEMO01")
-    .sort((a, b) => b.expires_at.localeCompare(a.expires_at));
+  try {
+    const shares = await call<Share[]>("backend", `/api/patients/${patientId}/shares`);
+    return shares.filter((s) => s.code !== "DEMO01");
+  } catch (problem) {
+    console.error(problem);
+    return [];
+  }
 }
 
-// Backend route to come: GET /api/patients/:id/access-log
 export async function listAccessLog(patientId: string): Promise<AccessLogEntry[]> {
-  await wait(100);
-  const store = load();
-  const codes = new Set(store.shares.filter((s) => s.patient_id === patientId).map((s) => s.code));
-  return store.accessLog
-    .filter((e) => codes.has(e.share_code))
-    .sort((a, b) => b.viewed_at.localeCompare(a.viewed_at));
+  try {
+    return await call<AccessLogEntry[]>("backend", `/api/patients/${patientId}/access-log`);
+  } catch (problem) {
+    console.error(problem);
+    return [];
+  }
 }
 
 export type OpenShareResult =
   | { ok: true; share: Share; patientName: string; documents: HealthDocument[] }
-  | { ok: false; reason: "not_found" | "expired" };
+  | { ok: false; reason: "not_found" | "expired" | "unavailable" };
 
-// Clinician opens a code. Every document they can see is written to the access log.
-// The share itself is kept in this browser, but the documents it points to are the
-// real ones from the AI service.
-// Backend route to come: GET /api/shares/:code?viewer_id=...
+// What the backend sends when a clinician opens a code.
+type OpenedShare = {
+  code: string;
+  patient: string; // the patient's id
+  patient_name: string;
+  expires_at: string;
+  document_ids: string[];
+  documents: StoredRecord[];
+};
+
+// Clinician opens a code. The backend writes every document they are shown to the access log.
 export async function openShare(code: string, viewerId: string): Promise<OpenShareResult> {
-  const store = load();
-  const share = store.shares.find((s) => s.code === code.trim().toUpperCase());
-  if (!share) return { ok: false, reason: "not_found" };
-  if (new Date(share.expires_at).getTime() < Date.now()) return { ok: false, reason: "expired" };
-  const all = await listDocuments(share.patient_id);
-  const documents = all.filter((d) => share.document_ids.includes(d.id));
-  const now = new Date().toISOString();
-  for (const d of documents) {
-    store.accessLog.push({
-      id: newId("a"),
-      share_code: share.code,
-      viewer_id: viewerId,
-      viewer_name: DEMO_USERS.clinician.name,
-      document_id: d.id,
-      viewed_at: now,
-    });
+  const query = new URLSearchParams({ viewer_id: viewerId });
+  try {
+    const opened = await call<OpenedShare>("backend", `/api/shares/${encodeURIComponent(code.trim().toUpperCase())}?${query}`);
+    return {
+      ok: true,
+      share: { code: opened.code, patient_id: opened.patient, document_ids: opened.document_ids, expires_at: opened.expires_at },
+      patientName: opened.patient_name,
+      documents: opened.documents.map((d) => toDocument(d, opened.patient)),
+    };
+  } catch (problem) {
+    const status = problem instanceof RequestError ? problem.status : 0;
+    if (status === 404) return { ok: false, reason: "not_found" };
+    if (status === 410) return { ok: false, reason: "expired" };
+    console.error(problem);
+    return { ok: false, reason: "unavailable" };
   }
-  save(store);
-  return { ok: true, share, patientName: DEMO_USERS.patient.name, documents };
 }
 
-// ---------- cost estimates (real: the trained cost model, through the AI service)
+// ---------- cost estimates (the trained cost model, through the AI service)
 
 // A price range the way the AI service returns it.
 type AiEstimate = {
@@ -282,12 +267,8 @@ function toEstimate(price: AiEstimate, zip: string): Estimate {
 export async function costOptions(serviceCode: string, zip: string): Promise<Estimate[]> {
   const query = new URLSearchParams({ service_code: serviceCode, zip_code: zip, limit: "3" });
   const [area, clinics] = await Promise.all([
-    ai<AiEstimate>("/estimate", {
-      method: "POST",
-      headers: JSON_HEADERS,
-      body: JSON.stringify({ service_code: serviceCode, zip_code: zip }),
-    }),
-    ai<AiEstimate[]>(`/clinics?${query}`).catch(() => []), // no clinic list is fine, the area estimate still shows
+    call<AiEstimate>("ai", "/estimate", post({ service_code: serviceCode, zip_code: zip })),
+    call<AiEstimate[]>("ai", `/clinics?${query}`).catch(() => []), // no clinic list is fine, the area estimate still shows
   ]);
   return [area, ...clinics].map((price) => toEstimate(price, zip));
 }
@@ -296,7 +277,7 @@ export function serviceLabel(code: string) {
   return SERVICES.find((s) => s.code === code)?.label ?? code;
 }
 
-// ---------- companion chat (real: AI service)
+// ---------- companion chat (AI service)
 
 type AiChatReply = {
   reply: string;
@@ -309,12 +290,13 @@ const chatHistory: { role: "user" | "assistant"; content: string }[] = [];
 
 export async function sendChat(patientId: string, message: string): Promise<ChatMessage> {
   let answer: AiChatReply;
+  let records: StoredRecord[];
   try {
-    answer = await ai<AiChatReply>("/chat", {
-      method: "POST",
-      headers: JSON_HEADERS,
-      body: JSON.stringify({ message, patient_id: aiPatientId(patientId), history: chatHistory }),
-    });
+    // The companion answers from the patient's records, so send it the current timeline
+    // from the backend. A document uploaded a minute ago is included.
+    // Oldest first: when two records match a question equally well, the companion picks the later one.
+    records = (await storedRecords(patientId)).reverse();
+    answer = await call<AiChatReply>("ai", "/chat", post({ message, patient_id: patientId, history: chatHistory, records }));
   } catch (problem) {
     return { role: "companion", text: `I can't answer right now. ${(problem as Error).message}` };
   }
@@ -322,11 +304,11 @@ export async function sendChat(patientId: string, message: string): Promise<Chat
 
   // Show which records and estimates the answer came from.
   const sources: ChatSource[] = [];
-  if (answer.used_records.length > 0) {
-    const documents = await listDocuments(patientId);
-    for (const id of answer.used_records) {
-      const d = documents.find((doc) => doc.id === id);
-      if (d) sources.push({ kind: "record", id: d.id, label: `${d.type}, ${d.provider}, ${d.date}` });
+  for (const id of answer.used_records) {
+    const record = records.find((r) => r.id === id);
+    if (record) {
+      const d = toDocument(record, patientId);
+      sources.push({ kind: "record", id: d.id, label: `${d.type}, ${d.provider}, ${d.date}` });
     }
   }
   for (const e of answer.used_estimates) {
@@ -335,7 +317,8 @@ export async function sendChat(patientId: string, message: string): Promise<Chat
 
   return {
     role: "companion",
-    text: answer.reply,
+    // The chat bubble shows plain text, so drop the ** marks the model sometimes puts around bold words.
+    text: answer.reply.replace(/\*\*(.+?)\*\*/g, "$1"),
     sources,
     // The companion sends people with urgent symptoms to 911, and those replies get the red style.
     urgent: /\b911\b/.test(answer.reply),

@@ -19,6 +19,13 @@ body {
     linear-gradient(180deg, #134e4a 0%, #115e59 30%, #0f766e 60%, #99f6e4 88%, #f8fafc 100%);
 }
 
+/* Sign-in pages (components/SignInForm.tsx): teal that stays dark all the way down, so white text is easy to read. */
+.signin-bg {
+  background:
+    radial-gradient(50% 45% at 78% 30%, rgba(94, 234, 212, 0.25), transparent 70%),
+    linear-gradient(160deg, #134e4a 0%, #115e59 45%, #0f766e 100%);
+}
+
 /* A grid of small dots. The mask hides it in the middle, so it only shows near the left and right edges. */
 .hero-dots {
   background-image: radial-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1.5px);
