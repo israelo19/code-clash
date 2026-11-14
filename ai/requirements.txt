@@ -9,3 +9,10 @@ joblib==1.6.0
 # Charts for the deck and the checks in ai/tests.
 matplotlib==3.11.2
 pytest==9.2.0
+fastapi
+uvicorn[standard]
+python-multipart
+anthropic
+python-dotenv
+pillow
+pillow-heif
