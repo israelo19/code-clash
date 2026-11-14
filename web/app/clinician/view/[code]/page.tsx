@@ -35,7 +35,11 @@ export default function SharedView() {
       <>
         {back}
         <Card className="border-rose-200 bg-rose-50 text-sm text-rose-900">
-          {result.reason === "expired" ? "This code has expired. Ask the patient for a new one." : "That code wasn't found."}
+          {result.reason === "expired"
+            ? "This code has expired. Ask the patient for a new one."
+            : result.reason === "unavailable"
+              ? "Can't open the code right now. Is the backend running on port 4000?"
+              : "That code wasn't found."}
         </Card>
       </>
     );

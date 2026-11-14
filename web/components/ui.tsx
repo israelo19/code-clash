@@ -104,9 +104,12 @@ export function CostRangeCard({ estimate, highlight = false }: { estimate: Estim
   const pct = ((typical - low) / (high - low || 1)) * 100;
   return (
     <Card className={highlight ? "border-teal-400 ring-1 ring-teal-200" : ""}>
-      <div className="flex items-center justify-between">
-        <div className="text-sm font-medium">{estimate.setting}</div>
-        {highlight && <span className="rounded-full bg-teal-600 px-2 py-0.5 text-xs font-medium text-white">Lowest</span>}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-sm font-medium">{estimate.label}</div>
+          <div className="text-xs text-slate-500">{estimate.detail}</div>
+        </div>
+        {highlight && <span className="shrink-0 rounded-full bg-teal-600 px-2 py-0.5 text-xs font-medium text-white">Lowest</span>}
       </div>
       <div className="mt-2 text-2xl font-semibold">
         ${low}–${high}

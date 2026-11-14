@@ -2,30 +2,39 @@
 
 import { useEffect, useState } from "react";
 import { CostRangeCard, PageHeader } from "@/components/ui";
-import { SETTINGS, estimateCost } from "@/lib/api";
+import { costOptions } from "@/lib/api";
 import { SERVICES } from "@/lib/mockData";
 import type { Estimate } from "@/lib/types";
 
-// Pick a service -> get a price range for each care setting nearby.
+// Pick a service and a ZIP -> a price range for the area, plus known clinics nearby, cheapest first.
+// The numbers come from the trained cost model (see docs/DECISIONS.md).
 export default function CostCheck() {
   const [code, setCode] = useState(SERVICES[0].code);
-  const [zip, setZip] = useState("21252");
-  const [result, setResult] = useState<{ key: string; estimates: Estimate[] } | null>(null);
+  const [zip, setZip] = useState("21204"); // Towson
+  // The latest answer, saved with the service and ZIP it belongs to. `error` is set when the request failed.
+  const [result, setResult] = useState<{ key: string; options: Estimate[]; error?: string } | null>(null);
   const key = `${code}|${zip}`;
-  // Show "Estimating…" until the result for the current service and ZIP arrives.
-  const estimates = result?.key === key ? result.estimates : null;
+  // Show "Estimating…" until the answer for the current service and ZIP arrives.
+  const current = result?.key === key ? result : null;
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all(SETTINGS.map((s) => estimateCost(code, s, zip))).then((r) => {
-      if (!cancelled) setResult({ key: `${code}|${zip}`, estimates: r });
-    });
+    const asked = `${code}|${zip}`;
+    costOptions(code, zip)
+      .then((options) => {
+        if (!cancelled) setResult({ key: asked, options });
+      })
+      .catch((problem: Error) => {
+        if (!cancelled) setResult({ key: asked, options: [], error: problem.message });
+      });
     return () => {
       cancelled = true;
     };
   }, [code, zip]);
 
-  const cheapest = estimates ? Math.min(...estimates.map((e) => e.typical)) : null;
+  const options = current?.options ?? [];
+  const area = options.find((o) => o.based_on === "area");
+  const clinics = options.filter((o) => o.based_on === "clinic");
 
   return (
     <>
@@ -57,17 +66,38 @@ export default function CostCheck() {
         </label>
       </div>
 
-      {estimates === null ? (
+      {current === null ? (
         <p className="text-sm text-slate-500">Estimating…</p>
+      ) : current.error ? (
+        <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-900">
+          <strong>No estimate right now.</strong> {current.error}
+        </p>
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {estimates.map((e) => (
-              <CostRangeCard key={e.setting} estimate={e} highlight={e.typical === cheapest} />
-            ))}
-          </div>
+          {area && <CostRangeCard estimate={area} />}
+
+          <h2 className="mb-2 mt-6 text-sm font-semibold text-slate-700">Clinics near you, cheapest first</h2>
+          {clinics.length > 0 ? (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {/* The list arrives cheapest first, so the first card is the lowest. */}
+                {clinics.map((c, i) => (
+                  <CostRangeCard key={c.label + c.detail} estimate={c} highlight={i === 0} />
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-slate-500">
+                Each clinic&apos;s range comes from what clinicians at that address have billed before. Clinics are listed by
+                street address because the public data has no clinic names.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">
+              No clinics in our data near this ZIP. We only have Maryland clinics, so the range above is the best estimate.
+            </p>
+          )}
+
           <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs text-amber-900">
-            <strong>Estimate only.</strong> {estimates[0].caveat}
+            <strong>Billed prices, before insurance.</strong> {options[0]?.caveat}
           </p>
         </>
       )}

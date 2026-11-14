@@ -1,24 +1,21 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { Logo } from "@/components/Logo";
 import { Card, ChatBubble, TypeBadge } from "@/components/ui";
-import { SETTINGS, estimateCost, resetDemoData, serviceLabel } from "@/lib/api";
+import { costOptions, resetDemoData, serviceLabel } from "@/lib/api";
 import { NOT_A_DOCTOR_LINE } from "@/lib/config";
-import { DEMO_USERS } from "@/lib/mockData";
-import { signIn } from "@/lib/session";
-import type { ChatMessage, Estimate, Role } from "@/lib/types";
+import type { ChatMessage, Estimate } from "@/lib/types";
 
-// Landing page and demo sign-in.
-// Top to bottom: menu bar, headline with the two demo sign-in buttons, three floating preview cards
+// Landing page.
+// Top to bottom: menu bar, headline with the patient and clinician sign-in buttons, three floating preview cards
 // (the middle one is a live cost check), "How it works", "Privacy", and the footer with "Reset demo data".
-// Sign-in is still the two seeded accounts with no passwords (real sign-up is cut for today).
+// Nobody is signed in on this page. Every sign-in button is a link to the sign-in pages:
+// /signin for patients and /signin/clinician for clinicians (see components/SignInForm.tsx).
 
 // ---------- text and sample content shown on this page
-
-const PATIENT_FIRST_NAME = DEMO_USERS.patient.name.split(" ")[0];
 
 const TAGS = ["Records vault", "Cost check", "AI companion"];
 
@@ -76,15 +73,8 @@ const GLASS_CARD =
 
 // ---------- the page
 
-export default function Login() {
-  const router = useRouter();
+export default function Home() {
   const [reset, setReset] = useState(false);
-
-  // Demo sign-in: remember the role, then open that side of the app (or one specific screen).
-  const go = (role: Role, path: string = `/${role}`) => {
-    signIn(role);
-    router.push(path);
-  };
 
   // Smoothly scroll to a section of this page. Used by the menu at the top.
   const scrollTo = (id: string) => {
@@ -112,15 +102,15 @@ export default function Login() {
             Privacy
           </button>
         </nav>
-        <button
-          onClick={() => go("clinician")}
+        <Link
+          href="/signin"
           className="rounded-full border border-white/40 bg-white/15 px-4 py-2 text-sm font-medium text-white backdrop-blur transition hover:bg-white/25"
         >
-          Clinician sign in
-        </button>
+          Sign in
+        </Link>
       </header>
 
-      {/* Headline and the two demo sign-in buttons */}
+      {/* Headline and the two sign-in buttons */}
       <section className="mx-auto max-w-3xl px-4 pt-8 text-center text-white md:pt-14">
         <ul className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs text-teal-50 md:text-sm">
           {TAGS.map((tag) => (
@@ -148,20 +138,22 @@ export default function Login() {
         </p>
 
         <div className="mt-7 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-          <button
-            onClick={() => go("patient")}
+          <Link
+            href="/signin"
             className="rounded-full bg-pink-600 px-6 py-3 text-sm font-medium text-white shadow-lg shadow-pink-700/30 transition hover:bg-pink-700"
           >
-            Patient demo · {DEMO_USERS.patient.name}
-          </button>
-          <button
-            onClick={() => go("clinician")}
+            Patient sign in
+          </Link>
+          <Link
+            href="/signin/clinician"
             className="rounded-full border border-white/40 bg-white/15 px-6 py-3 text-sm font-medium text-white backdrop-blur transition hover:bg-white/25"
           >
-            Clinician demo · {DEMO_USERS.clinician.name}
-          </button>
+            Clinician sign in
+          </Link>
         </div>
-        <p className="mt-3 text-xs text-teal-100">Two demo accounts with synthetic records. No password needed.</p>
+        <p className="mt-3 text-xs text-teal-100">
+          Demo accounts with synthetic records. The sign-in details are filled in for you.
+        </p>
       </section>
 
       {/* Three floating preview cards. On phones they stack, with the cost card first. */}
@@ -176,10 +168,10 @@ export default function Login() {
               </li>
             ))}
           </ul>
-          <CardLink onClick={() => go("patient")}>Open the vault as {PATIENT_FIRST_NAME}</CardLink>
+          <CardLink>Sign in to open your vault</CardLink>
         </div>
 
-        <CostPreview onOpen={() => go("patient", "/patient/cost")} />
+        <CostPreview />
 
         <div className={GLASS_CARD}>
           <CardTitle icon="chat" title="Answers from your records" />
@@ -189,7 +181,7 @@ export default function Login() {
             ))}
           </div>
           <p className="mt-3 text-[11px] text-slate-500">{NOT_A_DOCTOR_LINE}</p>
-          <CardLink onClick={() => go("patient", "/patient/chat")}>Ask a question as {PATIENT_FIRST_NAME}</CardLink>
+          <CardLink>Sign in to ask a question</CardLink>
         </div>
       </section>
 
@@ -260,19 +252,19 @@ function CardTitle({ icon, title }: { icon: string; title: string }) {
   );
 }
 
-// Text button at the bottom of a white floating card.
-function CardLink({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+// Text link at the bottom of a white floating card. It goes to the patient sign-in page.
+function CardLink({ children }: { children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className="mt-4 text-sm font-medium text-teal-700 hover:underline">
+    <Link href="/signin" className="mt-4 inline-block text-sm font-medium text-teal-700 hover:underline">
       {children} →
-    </button>
+    </Link>
   );
 }
 
 // The pink card in the middle: a small live cost check.
-// Tapping a service asks lib/api.ts for an estimate at each care setting, the same call the full Costs screen makes.
-// So when the real cost model is connected in lib/api.ts, this card shows its numbers with no change here.
-function CostPreview({ onOpen }: { onOpen: () => void }) {
+// Tapping a service asks lib/api.ts for the price options near Towson, the same call the full Costs screen makes:
+// the estimate for the area, then known clinics nearby. The numbers come from the trained cost model.
+function CostPreview() {
   const [code, setCode] = useState(PREVIEW_SERVICES[0].code);
   // The latest answer, saved together with the service code it belongs to.
   const [result, setResult] = useState<{ code: string; estimates: Estimate[] } | null>(null);
@@ -281,7 +273,7 @@ function CostPreview({ onOpen }: { onOpen: () => void }) {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all(SETTINGS.map((setting) => estimateCost(code, setting, PREVIEW_ZIP)))
+    costOptions(code, PREVIEW_ZIP)
       .then((list) => {
         if (!cancelled) setResult({ code, estimates: list });
       })
@@ -296,9 +288,9 @@ function CostPreview({ onOpen }: { onOpen: () => void }) {
   }, [code]);
 
   const estimates = result?.estimates ?? [];
-  // The cheapest place to go is the one with the lowest typical price.
+  // The cheapest option is the one with the lowest typical price.
   const cheapest = estimates.length > 0 ? estimates.reduce((a, b) => (b.typical < a.typical ? b : a)) : null;
-  // The longest bar belongs to the most expensive setting. The other bars are drawn relative to it.
+  // The longest bar belongs to the most expensive option. The other bars are drawn relative to it.
   const maxHigh = Math.max(1, ...estimates.map((e) => e.high));
 
   return (
@@ -338,17 +330,17 @@ function CostPreview({ onOpen }: { onOpen: () => void }) {
                 ${cheapest.low}–${cheapest.high}
               </div>
               <div className="mt-1 text-xs">
-                {serviceLabel(cheapest.service_code)} · Lowest: {cheapest.setting}
+                {serviceLabel(cheapest.service_code)} · Lowest: {cheapest.label}
               </div>
             </div>
 
             <div className="mt-4 rounded-2xl bg-white p-4 text-slate-700">
               <ul className="flex flex-col gap-2.5">
                 {estimates.map((e) => (
-                  <li key={e.setting}>
-                    <div className="flex justify-between text-xs">
-                      <span className="font-medium">{e.setting}</span>
-                      <span className="text-slate-500">
+                  <li key={e.label}>
+                    <div className="flex justify-between gap-2 text-xs">
+                      <span className="truncate font-medium">{e.label}</span>
+                      <span className="shrink-0 text-slate-500">
                         ${e.low}–${e.high}
                       </span>
                     </div>
@@ -371,12 +363,12 @@ function CostPreview({ onOpen }: { onOpen: () => void }) {
         )}
       </div>
 
-      <button
-        onClick={onOpen}
-        className="mt-4 w-full rounded-full bg-white px-4 py-2 text-sm font-medium text-pink-700 transition hover:bg-pink-50"
+      <Link
+        href="/signin"
+        className="mt-4 block w-full rounded-full bg-white px-4 py-2 text-center text-sm font-medium text-pink-700 transition hover:bg-pink-50"
       >
-        Full cost check as {PATIENT_FIRST_NAME} →
-      </button>
+        Sign in for the full cost check →
+      </Link>
     </div>
   );
 }

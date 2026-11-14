@@ -57,15 +57,17 @@ export type AccessLogEntry = {
   viewed_at: string;
 };
 
-// Output of POST /estimate.
-export type CareSetting = "Campus health center" | "Retail clinic" | "Urgent care" | "Emergency room";
-
+// A price range from the cost model (AI service POST /estimate and GET /clinics).
+// The model cannot tell a campus clinic from a retail clinic or urgent care, so there is
+// no "care setting". An estimate is either for the whole area or for one known clinic.
 export type Estimate = {
   service_code: string;
-  setting: CareSetting;
+  label: string; // card title: "Typical for your area" or a clinic's street address
+  detail: string; // second line: the ZIP area, or the clinic's city and ZIP
   low: number;
   typical: number;
   high: number;
+  based_on: "area" | "clinic";
   caveat: string;
 };
 

@@ -1,290 +1,326 @@
 "use client";
 
-// THE ONE FILE TO SWAP.
-// Every screen talks to the backend only through these functions. Right now they use mock data
-// saved in the browser, so the whole demo clicks through before the backend and AI service exist.
-// When Workstream B's routes are ready, replace the body of each function with a fetch() call,
-// e.g. `return (await fetch("/api/documents")).json()`. The screens won't need to change.
+// How the screens reach the rest of the system. Every screen goes through these functions.
+//
+// THE BACKEND (App.js at the repo root, port 4000) keeps the data in its database:
+//   timeline and upload    GET /api/patients/:id/documents     POST /api/patients/:id/documents
+//   share codes            POST /api/shares                    GET /api/shares/:code
+//   access log and notes   GET /api/patients/:id/access-log    GET /api/patients/:id/notes   POST /api/notes
+//
+// THE AI SERVICE (ai/main.py, port 8000) does the thinking:
+//   companion chat         POST /chat          (it searches the records and calls the cost model)
+//   cost estimates         POST /estimate      GET /clinics      (the trained cost model)
+//   The document reader (POST /extract) is called by the backend during an upload, not from here.
+//
+// Sign-in is still the two demo accounts, checked in the browser (checkLogin below).
 
-import {
-  DEMO_EXTRACTED_VISIT,
-  DEMO_USERS,
-  SEED_DOCUMENTS,
-  SEED_NOTES,
-  SEED_SHARES,
-  SERVICES,
-} from "./mockData";
+import { DEMO_LOGINS, DEMO_USERS, SERVICES } from "./mockData";
 import type {
   AccessLogEntry,
-  CareSetting,
   ChatMessage,
   ChatSource,
   ClinicianNote,
+  DocumentType,
   Estimate,
   HealthDocument,
+  Role,
   Share,
+  User,
 } from "./types";
 
-// ---------- mock store (localStorage so a patient tab and a clinician tab in the same browser share it)
+// ---------- talking to the two services
 
-type Store = {
-  documents: HealthDocument[];
-  notes: ClinicianNote[];
-  shares: Share[];
-  accessLog: AccessLogEntry[];
+// Where each service runs. The defaults are ports 4000 and 8000 on the machine this page
+// came from, so a phone on the same Wi-Fi as the laptop reaches the laptop's services too.
+// Set NEXT_PUBLIC_API_URL and NEXT_PUBLIC_AI_URL when they are hosted somewhere else.
+const SERVICES_AT = {
+  backend: { name: "backend", port: 4000, url: process.env.NEXT_PUBLIC_API_URL },
+  ai: { name: "AI service", port: 8000, url: process.env.NEXT_PUBLIC_AI_URL },
 };
 
-const STORE_KEY = "mock_store_v1";
+// A failed request. `status` is the HTTP status code, or 0 when the service did not answer at all.
+class RequestError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
 
-function seed(): Store {
+// One request to a service. Throws a RequestError with a readable message when it fails.
+async function call<T>(service: keyof typeof SERVICES_AT, path: string, init?: RequestInit): Promise<T> {
+  const { name, port, url } = SERVICES_AT[service];
+  const host = typeof window === "undefined" ? "localhost" : window.location.hostname;
+  let reply: Response;
+  try {
+    reply = await fetch((url || `http://${host}:${port}`) + path, init);
+  } catch {
+    throw new RequestError(`Can't reach the ${name}. Is it running on port ${port}?`, 0);
+  }
+  if (!reply.ok) {
+    // The backend explains errors in "error", the AI service in "detail".
+    const body = await reply.json().catch(() => null);
+    const reason = body?.error ?? body?.detail;
+    throw new RequestError(typeof reason === "string" ? reason : `The ${name} answered with error ${reply.status}.`, reply.status);
+  }
+  return (await reply.json()) as T;
+}
+
+const JSON_HEADERS = { "Content-Type": "application/json" };
+
+const post = (body: unknown): RequestInit => ({ method: "POST", headers: JSON_HEADERS, body: JSON.stringify(body) });
+
+// ---------- sign-in (demo accounts, checked in the browser)
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Checks an email and password for the sign-in page. Returns the user, or null if they don't match.
+// It compares them with the two seeded demo accounts in mockData.ts. Real sign-up is cut for today.
+export async function checkLogin(role: Role, email: string, password: string): Promise<User | null> {
+  await wait(600);
+  const demo = DEMO_LOGINS[role];
+  const matches = email.trim().toLowerCase() === demo.email && password === demo.password;
+  return matches ? DEMO_USERS[role] : null;
+}
+
+// ---------- documents (backend database)
+
+// A record the way the backend stores it, which is the way the document reader wrote it.
+type StoredRecord = {
+  id: string;
+  type: string; // e.g. "visit_summary"
+  date: string;
+  provider: string;
+  summary: string;
+  fields: Record<string, string>;
+};
+
+// The document reader names types like "visit_summary". The screens show "Visit summary".
+const TYPE_LABELS: Record<string, DocumentType> = {
+  immunization_record: "Immunization record",
+  visit_summary: "Visit summary",
+  lab_result: "Lab result",
+  physical_form: "Physical form",
+  prescription: "Prescription",
+};
+
+// The document reader names fields like "read_date". The screens show "Read date".
+function fieldLabel(key: string) {
+  const words = key.replace(/_/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+function toDocument(record: StoredRecord, patientId: string): HealthDocument {
   return {
-    documents: [...SEED_DOCUMENTS],
-    notes: [...SEED_NOTES],
-    shares: [...SEED_SHARES],
-    accessLog: [],
+    id: record.id,
+    patient_id: patientId,
+    type: TYPE_LABELS[record.type] ?? "Other",
+    date: record.date || new Date().toISOString().slice(0, 10),
+    provider: record.provider || "Unknown provider",
+    summary: record.summary || "",
+    fields: Object.fromEntries(Object.entries(record.fields ?? {}).map(([key, value]) => [fieldLabel(key), String(value)])),
   };
 }
 
-function load(): Store {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return JSON.parse(raw) as Store;
-  } catch {}
-  return seed();
-}
+const storedRecords = (patientId: string) => call<StoredRecord[]>("backend", `/api/patients/${patientId}/documents`);
 
-function save(store: Store) {
-  try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(store));
-  } catch {}
-}
-
-export function resetDemoData() {
-  save(seed());
-}
-
-const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const newId = (prefix: string) => `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
-
-// ---------- documents
-
+// The patient's timeline, newest first. If the backend is down this returns an
+// empty list, so a screen shows "no records" and not a crash.
 export async function listDocuments(patientId: string): Promise<HealthDocument[]> {
-  await wait(150);
-  return load()
-    .documents.filter((d) => d.patient_id === patientId)
-    .sort((a, b) => b.date.localeCompare(a.date));
+  try {
+    const records = await storedRecords(patientId);
+    return records.map((r) => toDocument(r, patientId)).sort((a, b) => b.date.localeCompare(a.date));
+  } catch (problem) {
+    console.error(problem);
+    return [];
+  }
 }
 
 export async function getDocument(id: string): Promise<HealthDocument | null> {
-  await wait(100);
-  return load().documents.find((d) => d.id === id) ?? null;
+  const documents = await listDocuments(DEMO_USERS.patient.id);
+  return documents.find((d) => d.id === id) ?? null;
 }
 
-// Real version: POST the file to /api/extract (which calls the AI service's POST /extract),
-// then save the returned record. Mock: pretends to read the photo and returns the demo visit summary.
+// Send the photo or PDF to the backend. It passes the file to the document reader, saves
+// the record on the patient's timeline and returns it. Throws if the file can't be read.
 export async function uploadAndExtract(patientId: string, file: File): Promise<HealthDocument> {
-  await wait(1800);
-  const doc: HealthDocument = {
-    ...DEMO_EXTRACTED_VISIT,
-    id: newId("d"),
-    patient_id: patientId,
-    file_url: file.name,
-  };
-  const store = load();
-  store.documents.push(doc);
-  save(store);
-  return doc;
+  const form = new FormData();
+  form.append("file", file);
+  const record = await call<StoredRecord>("backend", `/api/patients/${patientId}/documents`, { method: "POST", body: form });
+  return toDocument(record, patientId);
 }
 
-// ---------- notes
+// Before a demo run: the backend drops uploads, share codes, notes and the access log,
+// and goes back to the starting records.
+export function resetDemoData() {
+  chatHistory.length = 0;
+  call("backend", "/api/reset", { method: "POST" }).catch(console.error);
+}
+
+// ---------- clinician notes (backend database)
 
 export async function listNotes(patientId: string): Promise<ClinicianNote[]> {
-  await wait(100);
-  return load()
-    .notes.filter((n) => n.patient_id === patientId)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  try {
+    return await call<ClinicianNote[]>("backend", `/api/patients/${patientId}/notes`);
+  } catch (problem) {
+    console.error(problem);
+    return [];
+  }
 }
 
 export async function addNote(patientId: string, clinicianId: string, text: string): Promise<ClinicianNote> {
-  await wait(300);
-  const note: ClinicianNote = {
-    id: newId("n"),
-    patient_id: patientId,
-    clinician_id: clinicianId,
-    clinician_name: DEMO_USERS.clinician.name,
-    text,
-    created_at: new Date().toISOString(),
-  };
-  const store = load();
-  store.notes.push(note);
-  save(store);
-  return note;
+  return call<ClinicianNote>("backend", "/api/notes", post({ patient_id: patientId, clinician_id: clinicianId, text }));
 }
 
-// ---------- sharing
+// ---------- share codes and the access log (backend database)
 
-function makeCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O or 1/I, easier to read aloud
-  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-}
-
+// The backend makes the code. It refuses documents that are not this patient's.
 export async function createShare(patientId: string, documentIds: string[], minutes: number): Promise<Share> {
-  await wait(300);
-  const share: Share = {
-    code: makeCode(),
-    patient_id: patientId,
-    document_ids: documentIds,
-    expires_at: new Date(Date.now() + minutes * 60_000).toISOString(),
-  };
-  const store = load();
-  store.shares.push(share);
-  save(store);
-  return share;
+  return call<Share>("backend", "/api/shares", post({ patient_id: patientId, document_ids: documentIds, minutes }));
 }
 
+// The patient's own codes. DEMO01 is a built-in code for trying the clinician side, so it is not listed.
 export async function listShares(patientId: string): Promise<Share[]> {
-  await wait(100);
-  return load()
-    .shares.filter((s) => s.patient_id === patientId && s.code !== "DEMO01")
-    .sort((a, b) => b.expires_at.localeCompare(a.expires_at));
+  try {
+    const shares = await call<Share[]>("backend", `/api/patients/${patientId}/shares`);
+    return shares.filter((s) => s.code !== "DEMO01");
+  } catch (problem) {
+    console.error(problem);
+    return [];
+  }
 }
 
 export async function listAccessLog(patientId: string): Promise<AccessLogEntry[]> {
-  await wait(100);
-  const store = load();
-  const codes = new Set(store.shares.filter((s) => s.patient_id === patientId).map((s) => s.code));
-  return store.accessLog
-    .filter((e) => codes.has(e.share_code))
-    .sort((a, b) => b.viewed_at.localeCompare(a.viewed_at));
+  try {
+    return await call<AccessLogEntry[]>("backend", `/api/patients/${patientId}/access-log`);
+  } catch (problem) {
+    console.error(problem);
+    return [];
+  }
 }
 
 export type OpenShareResult =
   | { ok: true; share: Share; patientName: string; documents: HealthDocument[] }
-  | { ok: false; reason: "not_found" | "expired" };
+  | { ok: false; reason: "not_found" | "expired" | "unavailable" };
 
-// Clinician opens a code. Every document they can see is written to the access log.
+// What the backend sends when a clinician opens a code.
+type OpenedShare = {
+  code: string;
+  patient: string; // the patient's id
+  patient_name: string;
+  expires_at: string;
+  document_ids: string[];
+  documents: StoredRecord[];
+};
+
+// Clinician opens a code. The backend writes every document they are shown to the access log.
 export async function openShare(code: string, viewerId: string): Promise<OpenShareResult> {
-  await wait(400);
-  const store = load();
-  const share = store.shares.find((s) => s.code === code.trim().toUpperCase());
-  if (!share) return { ok: false, reason: "not_found" };
-  if (new Date(share.expires_at).getTime() < Date.now()) return { ok: false, reason: "expired" };
-  const documents = store.documents.filter((d) => share.document_ids.includes(d.id));
-  const now = new Date().toISOString();
-  for (const d of documents) {
-    store.accessLog.push({
-      id: newId("a"),
-      share_code: share.code,
-      viewer_id: viewerId,
-      viewer_name: DEMO_USERS.clinician.name,
-      document_id: d.id,
-      viewed_at: now,
-    });
+  const query = new URLSearchParams({ viewer_id: viewerId });
+  try {
+    const opened = await call<OpenedShare>("backend", `/api/shares/${encodeURIComponent(code.trim().toUpperCase())}?${query}`);
+    return {
+      ok: true,
+      share: { code: opened.code, patient_id: opened.patient, document_ids: opened.document_ids, expires_at: opened.expires_at },
+      patientName: opened.patient_name,
+      documents: opened.documents.map((d) => toDocument(d, opened.patient)),
+    };
+  } catch (problem) {
+    const status = problem instanceof RequestError ? problem.status : 0;
+    if (status === 404) return { ok: false, reason: "not_found" };
+    if (status === 410) return { ok: false, reason: "expired" };
+    console.error(problem);
+    return { ok: false, reason: "unavailable" };
   }
-  save(store);
-  return { ok: true, share, patientName: DEMO_USERS.patient.name, documents };
 }
 
-// ---------- cost estimates
+// ---------- cost estimates (the trained cost model, through the AI service)
 
-export const SETTINGS: CareSetting[] = ["Campus health center", "Retail clinic", "Urgent care", "Emergency room"];
-
-// Mock typical prices. The real numbers come from Workstream D's trained model via POST /estimate.
-const BASE: Record<string, number> = {
-  "87880": 38,
-  "87804": 52,
-  "99213": 135,
-  "99203": 190,
-  "86580": 28,
-  "90471": 32,
-  "85025": 30,
-};
-const SETTING_FACTOR: Record<CareSetting, number> = {
-  "Campus health center": 0.6,
-  "Retail clinic": 1,
-  "Urgent care": 1.6,
-  "Emergency room": 4.5,
+// A price range the way the AI service returns it.
+type AiEstimate = {
+  service_code: string;
+  service: string;
+  low: number;
+  typical: number;
+  high: number;
+  based_on: "area" | "clinic";
+  caveat: string;
+  clinic?: { id: string; address: string; city: string; zip: string; providers_in_data?: number };
 };
 
-export async function estimateCost(serviceCode: string, setting: CareSetting, zip: string): Promise<Estimate> {
-  await wait(250);
-  void zip;
-  const typical = Math.round((BASE[serviceCode] ?? 100) * SETTING_FACTOR[setting]);
+function toEstimate(price: AiEstimate, zip: string): Estimate {
+  const clinic = price.clinic;
   return {
-    service_code: serviceCode,
-    setting,
-    low: Math.round(typical * 0.6),
-    typical,
-    high: Math.round(typical * 1.9),
-    caveat: "Estimate based on public Medicare charge data. Not a quote, and not what your insurance will pay.",
+    service_code: price.service_code,
+    label: clinic ? clinic.address : "Typical for your area",
+    detail: clinic ? `${clinic.city}, MD ${clinic.zip}` : `All providers around ZIP ${zip}`,
+    low: price.low,
+    typical: price.typical,
+    high: price.high,
+    based_on: price.based_on,
+    caveat: price.caveat,
   };
+}
+
+// Price options for one service near a ZIP code. The first is the estimate for
+// the whole area. The rest are known clinics nearby, cheapest first, each priced
+// from that clinic's own past charges. Throws if the service has no estimate.
+export async function costOptions(serviceCode: string, zip: string): Promise<Estimate[]> {
+  const query = new URLSearchParams({ service_code: serviceCode, zip_code: zip, limit: "3" });
+  const [area, clinics] = await Promise.all([
+    call<AiEstimate>("ai", "/estimate", post({ service_code: serviceCode, zip_code: zip })),
+    call<AiEstimate[]>("ai", `/clinics?${query}`).catch(() => []), // no clinic list is fine, the area estimate still shows
+  ]);
+  return [area, ...clinics].map((price) => toEstimate(price, zip));
 }
 
 export function serviceLabel(code: string) {
   return SERVICES.find((s) => s.code === code)?.label ?? code;
 }
 
-// ---------- companion chat
+// ---------- companion chat (AI service)
 
-// Real version: POST /chat with { message, patient_id }. Mock: keyword rules that show off
-// the two tools (search_records and estimate_cost) and the companion rules from the brief.
+type AiChatReply = {
+  reply: string;
+  used_records: string[]; // ids of the records the answer used
+  used_estimates: AiEstimate[];
+};
+
+// Earlier turns of this conversation, sent along so follow-up questions make sense.
+const chatHistory: { role: "user" | "assistant"; content: string }[] = [];
+
 export async function sendChat(patientId: string, message: string): Promise<ChatMessage> {
-  await wait(900);
-  const m = message.toLowerCase();
-  const docs = await listDocuments(patientId);
-  const imm = docs.find((d) => d.type === "Immunization record");
-  const visit = docs.find((d) => d.type === "Visit summary");
-
-  if (/(chest pain|can't breathe|cant breathe|trouble breathing|suicid|overdose|unconscious|severe bleeding)/.test(m)) {
-    return {
-      role: "companion",
-      urgent: true,
-      text: "This sounds urgent. Please call 911 or go to the nearest emergency room now. If you're on campus, campus police can also send help.",
-    };
+  let answer: AiChatReply;
+  let records: StoredRecord[];
+  try {
+    // The companion answers from the patient's records, so send it the current timeline
+    // from the backend. A document uploaded a minute ago is included.
+    // Oldest first: when two records match a question equally well, the companion picks the later one.
+    records = (await storedRecords(patientId)).reverse();
+    answer = await call<AiChatReply>("ai", "/chat", post({ message, patient_id: patientId, history: chatHistory, records }));
+  } catch (problem) {
+    return { role: "companion", text: `I can't answer right now. ${(problem as Error).message}` };
   }
+  chatHistory.push({ role: "user", content: message }, { role: "assistant", content: answer.reply });
 
-  if (/(strep|sore throat|throat)/.test(m) && !/(mean|summary|results?)/.test(m)) {
-    const [campus, retail, urgent] = await Promise.all([
-      estimateCost("87880", "Campus health center", "212"),
-      estimateCost("87880", "Retail clinic", "212"),
-      estimateCost("87880", "Urgent care", "212"),
-    ]);
-    const visitCampus = await estimateCost("99213", "Campus health center", "212");
-    const sources: ChatSource[] = [{ kind: "estimate", label: "Rapid strep test + office visit, Towson area" }];
-    if (imm) sources.push({ kind: "record", id: imm.id, label: `${imm.type}, ${imm.provider}` });
-    return {
-      role: "companion",
-      sources,
-      text:
-        `I can't tell you whether it's strep, but a clinic can test for it in about 10 minutes. Here's roughly what a rapid strep test costs near you:\n\n` +
-        `• Campus health center: $${campus.low}–$${campus.high}\n` +
-        `• Retail clinic: $${retail.low}–$${retail.high}\n` +
-        `• Urgent care: $${urgent.low}–$${urgent.high}\n\n` +
-        `Add about $${visitCampus.low}–$${visitCampus.high} for the visit itself at the campus health center. ` +
-        `The campus health center is usually the cheapest option. Bring your insurance card and your immunization record. You can share it with the clinician by code from the Share tab.`,
-    };
+  // Show which records and estimates the answer came from.
+  const sources: ChatSource[] = [];
+  for (const id of answer.used_records) {
+    const record = records.find((r) => r.id === id);
+    if (record) {
+      const d = toDocument(record, patientId);
+      sources.push({ kind: "record", id: d.id, label: `${d.type}, ${d.provider}, ${d.date}` });
+    }
   }
-
-  if (/(immuni|vaccin|shot|mmr|tdap|tb)/.test(m) && imm) {
-    return {
-      role: "companion",
-      sources: [{ kind: "record", id: imm.id, label: `${imm.type}, ${imm.date}` }],
-      text: `From your immunization record: ${Object.entries(imm.fields)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join("; ")}. That covers what most clinical placement forms ask for. You can share it with a clinician or school by code from the Share tab.`,
-    };
-  }
-
-  if (/(mean|summary|explain|results?|visit|amoxicillin|antibiotic)/.test(m) && visit) {
-    return {
-      role: "companion",
-      sources: [{ kind: "record", id: visit.id, label: `${visit.type}, ${visit.provider}, ${visit.date}` }],
-      text: `Here's your visit summary in plain language: ${visit.summary}\n\nOn class: the summary says you can go back ${visit.fields["Return to class"]?.toLowerCase() ?? "once your clinician says it's okay"}.`,
-    };
+  for (const e of answer.used_estimates) {
+    if (e.typical !== undefined) sources.push({ kind: "estimate", label: `${e.service}: $${e.low}–$${e.high}` });
   }
 
   return {
     role: "companion",
-    text: "I can explain your records and estimate what care costs. Try asking “What does a strep test cost?”, “What vaccines do I have?” or “What does my visit summary mean?”",
+    // The chat bubble shows plain text, so drop the ** marks the model sometimes puts around bold words.
+    text: answer.reply.replace(/\*\*(.+?)\*\*/g, "$1"),
+    sources,
+    // The companion sends people with urgent symptoms to 911, and those replies get the red style.
+    urgent: /\b911\b/.test(answer.reply),
   };
 }

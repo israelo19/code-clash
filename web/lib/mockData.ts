@@ -7,6 +7,16 @@ export const DEMO_USERS: Record<"patient" | "clinician", User> = {
   clinician: { id: "u_lee", role: "clinician", name: "Dr. Sam Lee" },
 };
 
+// Sign-in details for the two demo accounts above. They are made up for the demo: not real accounts,
+// not real passwords. The sign-in page fills them in, and checkLogin() in lib/api.ts checks against them.
+// (".example" is a web address ending reserved for examples, so these emails can never belong to anyone.)
+export const DEMO_LOGINS: Record<"patient" | "clinician", { email: string; password: string }> = {
+  patient: { email: "maya.johnson@carevault.example", password: "towson-demo-2026" },
+  clinician: { email: "sam.lee@carevault.example", password: "towson-demo-2026" },
+};
+
+// No longer shown in the app: the timeline now comes from the backend's database, which starts from
+// data/sample_records.json. Kept as a reference for the document shape.
 export const SEED_DOCUMENTS: HealthDocument[] = [
   {
     id: "d_imm",
@@ -62,18 +72,18 @@ export const SEED_SHARES: Share[] = [
   {
     code: "DEMO01",
     patient_id: "u_maya",
-    document_ids: ["d_imm", "d_phys"],
+    document_ids: ["doc_imm001", "doc_phys001"], // ids of Maya's starting records in data/sample_records.json
     expires_at: "2099-01-01T00:00:00.000Z",
   },
 ];
 
-// Service codes from section 6 of the brief.
+// The six services the cost model can price (the AI service lists them at GET /services).
+// The TB skin test from the brief is not here: the training data had too few rows for it.
 export const SERVICES: Service[] = [
   { code: "87880", label: "Rapid strep test" },
   { code: "87804", label: "Rapid flu test" },
   { code: "99213", label: "Office visit, returning patient" },
   { code: "99203", label: "Office visit, new patient" },
-  { code: "86580", label: "TB skin test" },
   { code: "90471", label: "Giving a vaccine" },
   { code: "85025", label: "Blood count (CBC)" },
 ];
