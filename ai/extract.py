@@ -5,9 +5,23 @@ force Claude to call that tool. The tool's input schema is the exact JSON shape
 we want, so we always get clean, structured fields back instead of free text.
 """
 import base64
+import json
 from datetime import date
+from io import BytesIO
+
+from PIL import Image, ImageOps
 
 from llm import MOCK_MODE, call_llm
+
+# Lets Pillow open iPhone HEIC photos
+try:
+    from pillow_heif import register_heif_opener
+
+    register_heif_opener()
+except ImportError:
+    pass
+
+MAX_SIDE = 1568  # pixels; bigger photos are shrunk so they stay under the API's size limit
 
 DOC_TYPES = [
     "visit_summary", "lab_result", "immunization_record",
@@ -36,35 +50,57 @@ SAVE_RECORD_TOOL = {
 
 PROMPT = (
     "This is a photo or scan of a patient's medical paperwork. "
-    "Read it and call save_record with what it says. "
+    "Read it and call the save_record tool with what it says. Always call save_record, even if the "
+    "page is hard to read or isn't medical; then use type 'other'. "
     "Only include facts that are actually on the page. Do not guess or diagnose. "
     "If something is unreadable, leave it out."
 )
 
-SUPPORTED_IMAGES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+def prepare_image(file_bytes):
+    """Open any photo (JPG, PNG, HEIC...), fix its rotation, shrink it and save it as JPEG."""
+    try:
+        img = Image.open(BytesIO(file_bytes))
+    except Exception:
+        raise ValueError("Couldn't open that file as an image. Use a photo (JPG, PNG, HEIC) or a PDF.")
+    img = ImageOps.exif_transpose(img).convert("RGB")
+    img.thumbnail((MAX_SIDE, MAX_SIDE))
+    out = BytesIO()
+    img.save(out, "JPEG", quality=85)
+    return out.getvalue()
 
 
 def extract_document(file_bytes, media_type):
-    if media_type != "application/pdf" and media_type not in SUPPORTED_IMAGES:
-        raise ValueError(f"Unsupported file type: {media_type}. Use JPG, PNG, WEBP, GIF or PDF.")
+    is_pdf = media_type == "application/pdf" or file_bytes[:4] == b"%PDF"
+    if not is_pdf:
+        file_bytes = prepare_image(file_bytes)  # also rejects files that aren't images
     if MOCK_MODE:
         return _mock_record()
 
-    data = base64.standard_b64encode(file_bytes).decode()
-    if media_type == "application/pdf":
-        file_block = {"type": "document", "source": {"type": "base64", "media_type": media_type, "data": data}}
+    if is_pdf:
+        data = base64.standard_b64encode(file_bytes).decode()
+        file_block = {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": data}}
     else:
-        file_block = {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": data}}
+        data = base64.standard_b64encode(file_bytes).decode()
+        file_block = {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": data}}
 
+    # Some models don't allow forcing a tool, so we ask for it in the prompt instead
     response = call_llm(
         messages=[{"role": "user", "content": [file_block, {"type": "text", "text": PROMPT}]}],
         tools=[SAVE_RECORD_TOOL],
-        tool_choice={"type": "tool", "name": "save_record"},  # forces structured output
     )
     for block in response.content:
-        if block.type == "tool_use":
+        if block.type == "tool_use" and block.name == "save_record":
             return block.input
-    raise RuntimeError("The model did not return a record.")
+
+    # Backup: if the model answered in text, try to pull a JSON object out of it
+    text = "".join(b.text for b in response.content if b.type == "text")
+    start, end = text.find("{"), text.rfind("}")
+    if start != -1 and end > start:
+        try:
+            return json.loads(text[start : end + 1])
+        except json.JSONDecodeError:
+            pass
+    raise RuntimeError("The model did not return a record. It said: " + text[:300])
 
 
 def _mock_record():

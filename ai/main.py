@@ -3,6 +3,7 @@
 Run it:  uvicorn main:app --reload --port 8000
 Try it:  open http://localhost:8000/docs  (FastAPI makes a test page for every endpoint)
 """
+import traceback
 from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -34,6 +35,9 @@ async def extract_endpoint(file: UploadFile = File(...), patient_id: Optional[st
         record = extract_document(file_bytes, file.content_type)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:  # e.g. an API error: show the real reason instead of "Internal Server Error"
+        traceback.print_exc()
+        raise HTTPException(status_code=502, detail=f"{type(e).__name__}: {e}")
     if patient_id:
         record = store.add_record(patient_id, record)
     return record
