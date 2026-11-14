@@ -38,7 +38,7 @@ export default function CostCheck() {
 
   return (
     <>
-      <PageHeader title="What will it cost?" subtitle="See a price range before you go." />
+      <PageHeader title="What will it cost?" subtitle="See an estimated cost before you go." />
 
       <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_140px]">
         <label className="text-sm">
