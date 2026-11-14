@@ -3,7 +3,8 @@
 Reads the CSV made by data/pull_cms.py and trains two models:
 
   area model    price range from the service, provider type, setting and region
-  clinic model  the same, plus how that clinic prices compared with typical
+  clinic model  the same, plus how other providers at the same clinic, street
+                address, building and ZIP price compared with typical
 
 Each one is really three gradient boosting models, for the 10th, 50th and 90th
 percentile of price, so the app can show a range. Both are tested on providers
@@ -29,7 +30,8 @@ from sklearn.preprocessing import OrdinalEncoder
 
 from features import (
     AREA_FEATURES,
-    CLINIC_FEATURES,
+    LOCATION_FEATURES,
+    OFFSET,
     PRIMARY_CARE_TYPES,
     SERVICES,
     add_clinic_features,
@@ -89,15 +91,21 @@ def make_model(quantile, features):
     )
 
 
-def train_model(train, features):
+def train_model(train, features, offset=None):
     """Train the low, typical and high models on one set of features.
 
     The target is log(charge) because prices are skewed: a few providers bill
     several times the usual amount.
+
+    offset names a column that holds a starting guess in log dollars (what the
+    closest peers charge). When it is given, the models learn only the
+    correction to that guess, and predict_ranges adds the guess back. Trees
+    predict in steps, so on their own they can only roughly copy a peer's
+    price. Starting from the peer's price lets them match it exactly.
     """
-    target = np.log(train["charge"])
+    target = np.log(train["charge"]) - (train[offset] if offset else 0)
     fitted = {q: make_model(q, features).fit(train[features], target) for q in QUANTILES}
-    return {"features": features, "quantiles": fitted}
+    return {"features": features, "quantiles": fitted, "offset": offset}
 
 
 def baseline_ranges(train, test):
@@ -184,7 +192,7 @@ def visit_total_check(test, ranges):
 
 def evaluate(area_model, clinic_model, train, test):
     actual = test["charge"]
-    clinic_in_data = test["clinic_rows"] > 0
+    clinic_in_data = test["clinic_n"] > 0  # the app can list this clinic
     primary_care = test["provider_type"].isin(PRIMARY_CARE_TYPES)
 
     def use_clinic_when_known(area_ranges, clinic_ranges):
@@ -192,17 +200,21 @@ def evaluate(area_model, clinic_model, train, test):
         the area model when it is not."""
         return clinic_ranges.where(clinic_in_data, area_ranges)
 
-    # 1. Provider type known. This is the plain test of the models.
+    # 1. Provider type known. This is the plain test of the models. The final
+    # model is used for every held-out row: when the exact clinic is not in our
+    # data it still knows the street address, building and ZIP price levels.
     area = predict_ranges(area_model, test)
     known_type = {
         "baseline": baseline_ranges(train, test),
         "area_model": area,
-        "final_model": use_clinic_when_known(area, predict_ranges(clinic_model, test)),
+        "final_model": predict_ranges(clinic_model, test),
     }
 
     # 2. Provider type unknown. The app usually does not know it, so it shows a
     # range that covers the four primary-care types. Test that range on the
     # held-out primary-care providers, because it is what users actually see.
+    # Here the clinic model is used only where the app could list the clinic,
+    # and the area estimate everywhere else, exactly as the app does.
     area_default = predict_ranges_any_primary_care(area_model, test)
     app_shows = {
         "baseline": known_type["baseline"],
@@ -290,7 +302,7 @@ def main():
     test = add_clinic_features(test, reference)
 
     area_model = train_model(train, AREA_FEATURES)
-    clinic_model = train_model(train, CLINIC_FEATURES)
+    clinic_model = train_model(train, LOCATION_FEATURES, offset=OFFSET)
     metrics, predictions = evaluate(area_model, clinic_model, train, test)
     predictions.to_csv(PREDICTIONS_PATH, index=False)
 
@@ -301,9 +313,11 @@ def main():
         "model": "scikit-learn HistGradientBoostingRegressor, quantile loss at 0.1, 0.5, 0.9, on log(charge)",
         "baseline": "Median charge per service code, range = 10th to 90th percentile per code",
         "area_model_features": AREA_FEATURES,
-        "clinic_model_features": CLINIC_FEATURES,
-        "final_model": "Clinic model when the clinic is in the training data, area model otherwise",
-        "clinic": "Providers that share a street address and ZIP",
+        "clinic_model_features": LOCATION_FEATURES,
+        "final_model": "Clinic model for every held-out row. It starts from what the closest peers charge and learns the correction.",
+        "what_the_app_shows": "Clinic model when the clinic is in the training data, area model otherwise",
+        "clinic": "Providers that share a street address, suite and ZIP",
+        "levels": "clinic (address + suite + ZIP), street (address + ZIP), building (address without suite words + ZIP), 5-digit ZIP",
         "split": "20% of providers held out, grouped by provider so none appear in both sets",
         "rows": {"train": len(train), "test": len(test)},
         "providers": {"train": train["provider_id"].nunique(), "test": test["provider_id"].nunique()},
@@ -325,6 +339,8 @@ def main():
                 address=("address", "first"),
                 city=("city", "first"),
                 zip5=("zip5", "first"),
+                street=("street", "first"),
+                building=("building", "first"),
                 providers=("provider_id", "nunique"),
             ),
         },

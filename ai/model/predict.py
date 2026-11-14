@@ -56,6 +56,10 @@ def predict_ranges(model, rows):
     """
     inputs = rows[model["features"]]
     log_predictions = np.column_stack([model["quantiles"][q].predict(inputs) for q in (0.1, 0.5, 0.9)])
+    if model.get("offset"):
+        # This model predicts a correction to a starting guess (what the closest
+        # peers charge), so add the guess back. See train_model in train.py.
+        log_predictions = log_predictions + rows[model["offset"]].to_numpy()[:, None]
     dollars = np.sort(np.exp(log_predictions), axis=1)
     return pd.DataFrame(dollars, columns=["low", "typical", "high"], index=rows.index)
 
@@ -112,6 +116,10 @@ def estimate(code, zip_code, setting="office", provider_type=None, clinic=None):
 
     if clinic_known:
         model = saved["clinic_model"]
+        # Where the clinic is: its street address, building and ZIP, so the
+        # model can also use the price levels around it.
+        for level in ("street", "building", "zip5"):
+            row[level] = saved["clinics"].loc[clinic, level]
         row = add_clinic_features(row, saved["reference"])
     else:
         model = saved["area_model"]
@@ -203,7 +211,16 @@ def clinics_near(zip_code, code, limit=5, min_providers=2):
     # estimate() once per clinic.
     nearby = nearby.reset_index()  # the clinic id becomes a normal column
     rows = pd.DataFrame(
-        {"code": code, "provider_type": None, "place": "O", "zip3": nearby["zip5"].str[:3], "clinic": nearby["clinic"]}
+        {
+            "code": code,
+            "provider_type": None,
+            "place": "O",
+            "zip3": nearby["zip5"].str[:3],
+            "clinic": nearby["clinic"],
+            "street": nearby["street"],
+            "building": nearby["building"],
+            "zip5": nearby["zip5"],
+        }
     )
     rows = add_clinic_features(rows, reference)
     prices = predict_ranges_any_primary_care(saved["clinic_model"], rows).round().astype(int)

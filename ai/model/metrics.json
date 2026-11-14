@@ -2,12 +2,12 @@
   "headline": {
     "baseline_mae_dollars": 44.72,
     "area_model_mae_dollars": 39.79,
-    "final_model_mae_dollars": 34.93,
-    "final_vs_baseline_improvement_pct": 21.9,
-    "clinic_in_data_share_pct": 71.7,
-    "clinic_in_data_baseline_mae_dollars": 43.27,
-    "clinic_in_data_final_mae_dollars": 32.11,
-    "clinic_in_data_final_median_pct_error": 8.2
+    "final_model_mae_dollars": 32.25,
+    "final_vs_baseline_improvement_pct": 27.9,
+    "clinic_in_data_share_pct": 57.1,
+    "clinic_in_data_baseline_mae_dollars": 41.18,
+    "clinic_in_data_final_mae_dollars": 23.66,
+    "clinic_in_data_final_median_pct_error": 0.7
   },
   "provider_type_known": {
     "all_held_out": {
@@ -25,52 +25,52 @@
         "avg_range_width_dollars": 122.35
       },
       "final_model": {
-        "mae_dollars": 34.93,
-        "median_pct_error": 11.5,
-        "range_coverage_pct": 76.2,
-        "avg_range_width_dollars": 101.29
+        "mae_dollars": 32.25,
+        "median_pct_error": 8.8,
+        "range_coverage_pct": 77.4,
+        "avg_range_width_dollars": 95.28
       }
     },
     "clinic_in_data": {
-      "test_rows": 2259,
+      "test_rows": 1800,
       "baseline": {
-        "mae_dollars": 43.27,
-        "median_pct_error": 18.1,
-        "range_coverage_pct": 82.5,
-        "avg_range_width_dollars": 136.51
+        "mae_dollars": 41.18,
+        "median_pct_error": 17.5,
+        "range_coverage_pct": 83.6,
+        "avg_range_width_dollars": 134.07
       },
       "area_model": {
-        "mae_dollars": 38.89,
-        "median_pct_error": 15.0,
-        "range_coverage_pct": 78.0,
-        "avg_range_width_dollars": 121.0
+        "mae_dollars": 37.32,
+        "median_pct_error": 13.8,
+        "range_coverage_pct": 78.8,
+        "avg_range_width_dollars": 118.04
       },
       "final_model": {
-        "mae_dollars": 32.11,
-        "median_pct_error": 8.2,
-        "range_coverage_pct": 76.0,
-        "avg_range_width_dollars": 91.62
+        "mae_dollars": 23.66,
+        "median_pct_error": 0.7,
+        "range_coverage_pct": 78.1,
+        "avg_range_width_dollars": 69.06
       }
     },
     "clinic_not_in_data": {
-      "test_rows": 893,
+      "test_rows": 1352,
       "baseline": {
-        "mae_dollars": 48.38,
+        "mae_dollars": 49.43,
         "median_pct_error": 25.0,
-        "range_coverage_pct": 75.3,
-        "avg_range_width_dollars": 140.49
+        "range_coverage_pct": 76.2,
+        "avg_range_width_dollars": 142.38
       },
       "area_model": {
-        "mae_dollars": 42.07,
-        "median_pct_error": 19.2,
-        "range_coverage_pct": 76.8,
-        "avg_range_width_dollars": 125.77
+        "mae_dollars": 43.09,
+        "median_pct_error": 18.9,
+        "range_coverage_pct": 76.2,
+        "avg_range_width_dollars": 128.09
       },
       "final_model": {
-        "mae_dollars": 42.07,
-        "median_pct_error": 19.2,
-        "range_coverage_pct": 76.8,
-        "avg_range_width_dollars": 125.77
+        "mae_dollars": 43.7,
+        "median_pct_error": 18.4,
+        "range_coverage_pct": 76.6,
+        "avg_range_width_dollars": 130.18
       }
     }
   },
@@ -90,52 +90,52 @@
         "avg_range_width_dollars": 133.48
       },
       "final_estimate": {
-        "mae_dollars": 31.27,
-        "median_pct_error": 10.9,
-        "range_coverage_pct": 83.9,
-        "avg_range_width_dollars": 110.05
+        "mae_dollars": 29.73,
+        "median_pct_error": 9.3,
+        "range_coverage_pct": 83.0,
+        "avg_range_width_dollars": 98.44
       }
     },
     "primary_care_clinic_in_data": {
-      "test_rows": 1162,
+      "test_rows": 1014,
       "baseline": {
-        "mae_dollars": 36.36,
-        "median_pct_error": 16.7,
-        "range_coverage_pct": 85.4,
-        "avg_range_width_dollars": 122.95
+        "mae_dollars": 35.04,
+        "median_pct_error": 16.5,
+        "range_coverage_pct": 86.0,
+        "avg_range_width_dollars": 121.59
       },
       "area_estimate": {
-        "mae_dollars": 36.02,
-        "median_pct_error": 15.3,
+        "mae_dollars": 34.66,
+        "median_pct_error": 15.1,
         "range_coverage_pct": 87.8,
-        "avg_range_width_dollars": 131.86
+        "avg_range_width_dollars": 130.44
       },
       "final_estimate": {
-        "mae_dollars": 28.21,
-        "median_pct_error": 7.1,
-        "range_coverage_pct": 83.8,
-        "avg_range_width_dollars": 98.68
+        "mae_dollars": 23.21,
+        "median_pct_error": 1.1,
+        "range_coverage_pct": 81.9,
+        "avg_range_width_dollars": 73.59
       }
     },
     "primary_care_clinic_not_in_data": {
-      "test_rows": 483,
+      "test_rows": 631,
       "baseline": {
-        "mae_dollars": 40.73,
+        "mae_dollars": 41.82,
         "median_pct_error": 21.9,
         "range_coverage_pct": 81.0,
-        "avg_range_width_dollars": 129.49
+        "avg_range_width_dollars": 130.16
       },
       "area_estimate": {
-        "mae_dollars": 38.64,
+        "mae_dollars": 40.2,
         "median_pct_error": 18.1,
-        "range_coverage_pct": 84.1,
-        "avg_range_width_dollars": 137.38
+        "range_coverage_pct": 84.9,
+        "avg_range_width_dollars": 138.36
       },
       "final_estimate": {
-        "mae_dollars": 38.64,
+        "mae_dollars": 40.2,
         "median_pct_error": 18.1,
-        "range_coverage_pct": 84.1,
-        "avg_range_width_dollars": 137.38
+        "range_coverage_pct": 84.9,
+        "avg_range_width_dollars": 138.36
       }
     },
     "per_service": {
@@ -155,10 +155,10 @@
           "avg_range_width_dollars": 154.02
         },
         "final_estimate": {
-          "mae_dollars": 36.38,
-          "median_pct_error": 11.3,
-          "range_coverage_pct": 83.1,
-          "avg_range_width_dollars": 129.53
+          "mae_dollars": 34.03,
+          "median_pct_error": 9.3,
+          "range_coverage_pct": 82.5,
+          "avg_range_width_dollars": 115.42
         }
       },
       "99203": {
@@ -177,10 +177,10 @@
           "avg_range_width_dollars": 196.09
         },
         "final_estimate": {
-          "mae_dollars": 46.7,
-          "median_pct_error": 12.3,
-          "range_coverage_pct": 83.4,
-          "avg_range_width_dollars": 157.99
+          "mae_dollars": 45.7,
+          "median_pct_error": 10.7,
+          "range_coverage_pct": 79.9,
+          "avg_range_width_dollars": 140.97
         }
       },
       "87880": {
@@ -199,10 +199,10 @@
           "avg_range_width_dollars": 35.56
         },
         "final_estimate": {
-          "mae_dollars": 7.04,
-          "median_pct_error": 10.2,
-          "range_coverage_pct": 85.2,
-          "avg_range_width_dollars": 23.84
+          "mae_dollars": 6.97,
+          "median_pct_error": 10.5,
+          "range_coverage_pct": 86.1,
+          "avg_range_width_dollars": 22.23
         }
       },
       "87804": {
@@ -221,10 +221,10 @@
           "avg_range_width_dollars": 34.71
         },
         "final_estimate": {
-          "mae_dollars": 7.62,
-          "median_pct_error": 12.6,
-          "range_coverage_pct": 84.8,
-          "avg_range_width_dollars": 26.03
+          "mae_dollars": 7.33,
+          "median_pct_error": 12.9,
+          "range_coverage_pct": 84.0,
+          "avg_range_width_dollars": 24.96
         }
       },
       "90471": {
@@ -243,10 +243,10 @@
           "avg_range_width_dollars": 43.04
         },
         "final_estimate": {
-          "mae_dollars": 9.53,
-          "median_pct_error": 11.3,
-          "range_coverage_pct": 84.6,
-          "avg_range_width_dollars": 38.66
+          "mae_dollars": 11.19,
+          "median_pct_error": 16.7,
+          "range_coverage_pct": 80.8,
+          "avg_range_width_dollars": 37.11
         }
       },
       "85025": {
@@ -265,10 +265,10 @@
           "avg_range_width_dollars": 23.1
         },
         "final_estimate": {
-          "mae_dollars": 2.35,
-          "median_pct_error": 0.5,
-          "range_coverage_pct": 90.8,
-          "avg_range_width_dollars": 11.31
+          "mae_dollars": 2.49,
+          "median_pct_error": 0.0,
+          "range_coverage_pct": 95.4,
+          "avg_range_width_dollars": 11.13
         }
       }
     }
@@ -290,10 +290,10 @@
         "avg_range_width_dollars": 131.08
       },
       "final_model": {
-        "mae_dollars": 36.17,
-        "median_pct_error": 11.5,
-        "range_coverage_pct": 75.4,
-        "avg_range_width_dollars": 107.94
+        "mae_dollars": 33.11,
+        "median_pct_error": 8.6,
+        "range_coverage_pct": 77.3,
+        "avg_range_width_dollars": 98.71
       }
     },
     "99203": {
@@ -312,10 +312,10 @@
         "avg_range_width_dollars": 155.33
       },
       "final_model": {
-        "mae_dollars": 48.05,
-        "median_pct_error": 12.1,
-        "range_coverage_pct": 77.3,
-        "avg_range_width_dollars": 131.37
+        "mae_dollars": 45.12,
+        "median_pct_error": 10.0,
+        "range_coverage_pct": 74.5,
+        "avg_range_width_dollars": 130.35
       }
     },
     "87880": {
@@ -334,10 +334,10 @@
         "avg_range_width_dollars": 29.02
       },
       "final_model": {
-        "mae_dollars": 6.96,
-        "median_pct_error": 8.8,
-        "range_coverage_pct": 75.0,
-        "avg_range_width_dollars": 20.38
+        "mae_dollars": 5.84,
+        "median_pct_error": 7.0,
+        "range_coverage_pct": 80.8,
+        "avg_range_width_dollars": 19.67
       }
     },
     "87804": {
@@ -356,10 +356,10 @@
         "avg_range_width_dollars": 30.94
       },
       "final_model": {
-        "mae_dollars": 8.76,
-        "median_pct_error": 14.7,
-        "range_coverage_pct": 78.6,
-        "avg_range_width_dollars": 23.58
+        "mae_dollars": 7.61,
+        "median_pct_error": 15.3,
+        "range_coverage_pct": 80.9,
+        "avg_range_width_dollars": 22.41
       }
     },
     "90471": {
@@ -378,10 +378,10 @@
         "avg_range_width_dollars": 37.09
       },
       "final_model": {
-        "mae_dollars": 9.22,
-        "median_pct_error": 11.7,
-        "range_coverage_pct": 77.2,
-        "avg_range_width_dollars": 33.39
+        "mae_dollars": 10.37,
+        "median_pct_error": 15.7,
+        "range_coverage_pct": 75.4,
+        "avg_range_width_dollars": 30.75
       }
     },
     "85025": {
@@ -400,34 +400,34 @@
         "avg_range_width_dollars": 13.99
       },
       "final_model": {
-        "mae_dollars": 3.56,
-        "median_pct_error": 1.0,
-        "range_coverage_pct": 80.3,
-        "avg_range_width_dollars": 8.57
+        "mae_dollars": 3.55,
+        "median_pct_error": 0.0,
+        "range_coverage_pct": 90.6,
+        "avg_range_width_dollars": 11.68
       }
     }
   },
   "visit_totals": {
     "all_visit_plus_addon_pairs": {
       "pairs": 561,
-      "mae_dollars": 26.03,
-      "median_pct_error": 5.5,
-      "range_coverage_pct": 97.3,
-      "avg_range_width_dollars": 148.65
+      "mae_dollars": 24.78,
+      "median_pct_error": 4.0,
+      "range_coverage_pct": 92.7,
+      "avg_range_width_dollars": 118.85
     },
     "visit_plus_strep_test": {
       "pairs": 190,
-      "mae_dollars": 26.42,
-      "median_pct_error": 5.8,
-      "range_coverage_pct": 97.9,
-      "avg_range_width_dollars": 149.32
+      "mae_dollars": 24.92,
+      "median_pct_error": 4.2,
+      "range_coverage_pct": 94.2,
+      "avg_range_width_dollars": 121.4
     }
   },
   "clinic_price_consistency": {
     "median_gap_from_statewide_price_pct": 19.5,
-    "median_gap_from_same_clinic_price_pct": 0.2,
-    "rows_at_a_clinic_with_2_or_more_rows_for_the_service": 8449,
-    "clinics_in_training_data": 3573
+    "median_gap_from_same_clinic_price_pct": 0.0,
+    "rows_at_a_clinic_with_2_or_more_rows_for_the_service": 7080,
+    "clinics_in_training_data": 4615
   },
   "about": {
     "target": "Average submitted charge per provider and service (billed to Medicare)",
@@ -445,12 +445,35 @@
       "provider_type",
       "place",
       "zip3",
-      "clinic_level",
-      "clinic_same_code",
-      "clinic_rows"
+      "clinic_median",
+      "clinic_spread",
+      "clinic_n",
+      "clinic_code_median",
+      "clinic_code_spread",
+      "clinic_code_n",
+      "street_median",
+      "street_spread",
+      "street_n",
+      "street_code_median",
+      "street_code_spread",
+      "street_code_n",
+      "building_median",
+      "building_spread",
+      "building_n",
+      "building_code_median",
+      "building_code_spread",
+      "building_code_n",
+      "zip5_median",
+      "zip5_spread",
+      "zip5_n",
+      "zip5_code_median",
+      "zip5_code_spread",
+      "zip5_code_n"
     ],
-    "final_model": "Clinic model when the clinic is in the training data, area model otherwise",
-    "clinic": "Providers that share a street address and ZIP",
+    "final_model": "Clinic model for every held-out row. It starts from what the closest peers charge and learns the correction.",
+    "what_the_app_shows": "Clinic model when the clinic is in the training data, area model otherwise",
+    "clinic": "Providers that share a street address, suite and ZIP",
+    "levels": "clinic (address + suite + ZIP), street (address + ZIP), building (address without suite words + ZIP), 5-digit ZIP",
     "split": "20% of providers held out, grouped by provider so none appear in both sets",
     "rows": {
       "train": 12619,

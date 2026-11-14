@@ -57,21 +57,59 @@
       "range_coverage_pct": 77.91
     },
     {
-      "step": "+ the clinic's own price level",
+      "step": "+ price level at the same street address",
       "features": [
         "code",
         "provider_type",
         "place",
         "zip3",
-        "clinic_level",
-        "clinic_same_code",
-        "clinic_rows"
+        "street_level",
+        "street_same_code",
+        "street_rows"
       ],
       "mae_dollars": 33.22,
-      "median_pct_error": 11.58,
+      "median_pct_error": 11.57,
       "baseline_mae_dollars": 43.2,
       "baseline_median_pct_error": 18.05,
-      "range_coverage_pct": 77.26
+      "range_coverage_pct": 77.19
+    },
+    {
+      "step": "+ suite, building and ZIP price levels",
+      "features": [
+        "code",
+        "provider_type",
+        "place",
+        "zip3",
+        "clinic_median",
+        "clinic_spread",
+        "clinic_n",
+        "clinic_code_median",
+        "clinic_code_spread",
+        "clinic_code_n",
+        "street_median",
+        "street_spread",
+        "street_n",
+        "street_code_median",
+        "street_code_spread",
+        "street_code_n",
+        "building_median",
+        "building_spread",
+        "building_n",
+        "building_code_median",
+        "building_code_spread",
+        "building_code_n",
+        "zip5_median",
+        "zip5_spread",
+        "zip5_n",
+        "zip5_code_median",
+        "zip5_code_spread",
+        "zip5_code_n"
+      ],
+      "mae_dollars": 31.24,
+      "median_pct_error": 9.51,
+      "baseline_mae_dollars": 43.2,
+      "baseline_median_pct_error": 18.05,
+      "range_coverage_pct": 78.18
     }
   ],
   "not_kept": [
@@ -108,31 +146,31 @@
       "share_of_training_providers": 0.1,
       "baseline_mae_dollars": 43.3,
       "area_model_mae_dollars": 42.08,
-      "clinic_model_mae_dollars": 41.29
+      "clinic_model_mae_dollars": 41.68
     },
     {
       "share_of_training_providers": 0.25,
       "baseline_mae_dollars": 43.26,
       "area_model_mae_dollars": 40.6,
-      "clinic_model_mae_dollars": 38.13
+      "clinic_model_mae_dollars": 37.82
     },
     {
       "share_of_training_providers": 0.5,
       "baseline_mae_dollars": 43.21,
       "area_model_mae_dollars": 39.54,
-      "clinic_model_mae_dollars": 35.72
+      "clinic_model_mae_dollars": 35.02
     },
     {
       "share_of_training_providers": 0.75,
       "baseline_mae_dollars": 43.2,
       "area_model_mae_dollars": 39.22,
-      "clinic_model_mae_dollars": 34.25
+      "clinic_model_mae_dollars": 32.7
     },
     {
       "share_of_training_providers": 1.0,
       "baseline_mae_dollars": 43.2,
       "area_model_mae_dollars": 39.0,
-      "clinic_model_mae_dollars": 33.22
+      "clinic_model_mae_dollars": 31.24
     }
   ]
 }

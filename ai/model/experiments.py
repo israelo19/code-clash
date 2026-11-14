@@ -22,14 +22,14 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import GroupKFold
 
-from features import AREA_FEATURES, CLINIC_FEATURES, add_clinic_features, load_data, price_reference
+from features import AREA_FEATURES, LOCATION_FEATURES, OFFSET, STREET_FEATURES, add_clinic_features, load_data, price_reference
 from train import QUANTILES, SEED, make_model, split_by_provider
 
 OUT_PATH = Path(__file__).parent / "experiments.json"
 FOLDS = 4
 
 
-def cross_validate(train, features, share=1.0, with_ranges=True, **model_settings):
+def cross_validate(train, features, share=1.0, with_ranges=True, offset=None, **model_settings):
     """Average error of one model recipe across the four folds.
 
     share < 1 trains on only that share of the training providers, which is how
@@ -47,13 +47,17 @@ def cross_validate(train, features, share=1.0, with_ranges=True, **model_setting
         reference = price_reference(fit)
         fit, check = add_clinic_features(fit, reference), add_clinic_features(check, reference)
 
-        target = np.log(fit["charge"])
+        # With an offset the model learns the correction to a starting guess
+        # (what the closest peers charge), as train_model does in train.py.
+        start_fit = fit[offset] if offset else 0
+        start_check = check[offset].to_numpy() if offset else 0
+        target = np.log(fit["charge"]) - start_fit
         quantiles = QUANTILES if with_ranges else (0.5,)
         predictions = {}
         for q in quantiles:
             model = make_model(q, features)
             model.set_params(**{f"histgradientboostingregressor__{k}": v for k, v in model_settings.items()})
-            predictions[q] = np.exp(model.fit(fit[features], target).predict(check[features]))
+            predictions[q] = np.exp(model.fit(fit[features], target).predict(check[features]) + start_check)
 
         actual = check["charge"].to_numpy()
         baseline = check["code"].map(fit.groupby("code")["charge"].median()).to_numpy()
@@ -76,15 +80,16 @@ def main():
 
     # 1. Build the model up one piece of information at a time.
     steps = [
-        ("Service code only", ["code"]),
-        ("+ office or facility", ["code", "place"]),
-        ("+ region (first 3 ZIP digits)", ["code", "place", "zip3"]),
-        ("+ provider type", AREA_FEATURES),
-        ("+ the clinic's own price level", CLINIC_FEATURES),
+        ("Service code only", ["code"], None),
+        ("+ office or facility", ["code", "place"], None),
+        ("+ region (first 3 ZIP digits)", ["code", "place", "zip3"], None),
+        ("+ provider type", AREA_FEATURES, None),
+        ("+ price level at the same street address", STREET_FEATURES, None),
+        ("+ suite, building and ZIP price levels", LOCATION_FEATURES, OFFSET),
     ]
     progression = []
-    for label, features in steps:
-        result = cross_validate(train, features)
+    for label, features, offset in steps:
+        result = cross_validate(train, features, offset=offset)
         progression.append({"step": label, "features": features, **result})
         print(f"{label:<34} error ${result['mae_dollars']:<7} median {result['median_pct_error']}%  coverage {result['range_coverage_pct']}%")
     baseline = {"step": "Baseline: median price per service", "mae_dollars": progression[0]["baseline_mae_dollars"],
@@ -109,7 +114,7 @@ def main():
     learning_curve = []
     for share in (0.1, 0.25, 0.5, 0.75, 1.0):
         area = cross_validate(train, AREA_FEATURES, share=share, with_ranges=False)
-        clinic = cross_validate(train, CLINIC_FEATURES, share=share, with_ranges=False)
+        clinic = cross_validate(train, LOCATION_FEATURES, share=share, with_ranges=False, offset=OFFSET)
         learning_curve.append({
             "share_of_training_providers": share,
             "baseline_mae_dollars": area["baseline_mae_dollars"],
