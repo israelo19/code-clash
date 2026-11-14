@@ -23,7 +23,10 @@ Open http://localhost:3000. To test on your phone, open `http://<your-laptop-ip>
 
 | Path | What it is |
 | --- | --- |
-| `app/page.tsx` | Landing page with the demo sign-in (two seeded accounts) and a live cost preview card |
+| `app/page.tsx` | Landing page with a live cost preview card. Its sign-in buttons link to the sign-in pages |
+| `app/signin/page.tsx` | Patient sign-in page |
+| `app/signin/clinician/page.tsx` | Clinician sign-in page |
+| `components/SignInForm.tsx` | The sign-in form both of those pages use |
 | `app/patient/page.tsx` | Patient dashboard and records timeline |
 | `app/patient/upload/` | Photo or file upload, then the parsed record |
 | `app/patient/records/[id]/` | One record with its plain-language summary |
@@ -53,6 +56,7 @@ export async function listDocuments(patientId: string) {
 ## Demo notes
 
 - Mock data is saved in the browser, so a patient tab and a clinician tab in the same browser share it. Use "Reset demo data" at the bottom of the landing page before presenting.
+- Sign-in uses the two seeded demo accounts. Their email and password are in `DEMO_LOGINS` in `lib/mockData.ts`, and the sign-in pages fill them in for you. `checkLogin` in `lib/api.ts` does the check.
 - Code `DEMO01` always opens Maya's immunization record and physical form.
 - The mock upload always returns the strep visit summary, whatever image you pick.
 - The mock companion answers questions about strep, vaccines, and the visit summary. Urgent words (chest pain, trouble breathing) trigger the "call 911" reply.

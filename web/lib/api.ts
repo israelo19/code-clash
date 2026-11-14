@@ -8,6 +8,7 @@
 
 import {
   DEMO_EXTRACTED_VISIT,
+  DEMO_LOGINS,
   DEMO_USERS,
   SEED_DOCUMENTS,
   SEED_NOTES,
@@ -22,7 +23,9 @@ import type {
   ClinicianNote,
   Estimate,
   HealthDocument,
+  Role,
   Share,
+  User,
 } from "./types";
 
 // ---------- mock store (localStorage so a patient tab and a clinician tab in the same browser share it)
@@ -65,6 +68,18 @@ export function resetDemoData() {
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const newId = (prefix: string) => `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
+
+// ---------- sign-in
+
+// Checks an email and password for the sign-in page. Returns the user, or null if they don't match.
+// Real version: POST them to Workstream B's sign-in route and return the user it sends back.
+// Mock: compares them with the two seeded demo accounts in mockData.ts. Real sign-up is cut for today.
+export async function checkLogin(role: Role, email: string, password: string): Promise<User | null> {
+  await wait(600);
+  const demo = DEMO_LOGINS[role];
+  const matches = email.trim().toLowerCase() === demo.email && password === demo.password;
+  return matches ? DEMO_USERS[role] : null;
+}
 
 // ---------- documents
 
