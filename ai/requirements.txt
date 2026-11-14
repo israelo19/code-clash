@@ -1,3 +1,14 @@
+# Cost model (workstream D). Add the API service libraries below when needed.
+# scikit-learn and pandas are pinned because cost_model.joblib only loads with
+# the versions that saved it. If you change them, rerun: python ai/model/train.py
+requests==2.34.2
+pandas==3.1.1
+scikit-learn==1.9.1
+joblib==1.6.0
+
+# Charts for the deck and the checks in ai/tests.
+matplotlib==3.11.2
+pytest==9.2.0
 fastapi
 uvicorn[standard]
 python-multipart
