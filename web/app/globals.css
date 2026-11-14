@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* System fonts: no download needed, looks native on every phone and laptop. */
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* ---- Landing page background (used only by app/page.tsx) ---- */
+
+/* Dark teal at the top that fades into the page colour, with a soft glow behind the floating cards. */
+.hero-bg {
+  background:
+    radial-gradient(55% 30% at 50% 78%, rgba(153, 246, 228, 0.5), transparent 70%),
+    linear-gradient(180deg, #134e4a 0%, #115e59 30%, #0f766e 60%, #99f6e4 88%, #f8fafc 100%);
+}
+
+/* A grid of small dots. The mask hides it in the middle, so it only shows near the left and right edges. */
+.hero-dots {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1.5px);
+  background-size: 14px 14px;
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, transparent 28%, transparent 72%, #000 100%);
+  mask-image: linear-gradient(90deg, #000 0%, transparent 28%, transparent 72%, #000 100%);
+}
