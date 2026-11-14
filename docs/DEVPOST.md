@@ -7,10 +7,6 @@ Submit by 5:45 PM at https://code-clash.devpost.com/
 
 CareVault
 
-## Elevator pitch (the short tagline, 200 characters at most)
-
-Health care without the guesswork: your records in one place, a price before you go, and an AI companion that answers from your own paperwork.
-
 ## About the project (the big story box, Markdown works)
 
 ```markdown
@@ -28,7 +24,7 @@ A general chatbot does not know your records or what a clinic near you charges. 
 
 CareVault follows one loop around a clinic visit. Our demo patient is Maya, a sophomore who thinks she has strep.
 
-- **Before the visit: see the price.** Pick a service and type a ZIP code. You get a price range for your area and nearby clinics, cheapest first.
+- **Before the visit: see the price.** Pick a service and type a ZIP code. You get an estimated cost with a likely range, for your area and for nearby clinics, cheapest first.
 - **During the visit: share by code.** Pick the records to share and how long the code lasts. The clinician enters the code, sees only those records, and can add a visit note. You see a log of who viewed what.
 - **After the visit: photo to timeline.** Take a photo of the paperwork. The AI reads it, labels it, pulls out the key facts, explains it in plain language and files it on your timeline.
 - **Any time: ask the companion.** It answers from your own records and our cost model, lists what it used under every answer, and tells you it is not a doctor. Urgent symptoms get "call 911".
@@ -43,15 +39,15 @@ Three services that talk to each other:
 
 **The cost model is ours.** We trained it today with scikit-learn on public 2024 Medicare billing data for Maryland from CMS: 15,771 rows covering six common services. It predicts a low, typical and high price. We held out 20% of providers for the final test, so it is scored on clinics it never saw.
 
-- Average error: $34.93, against $44.72 for the baseline (the median price per service). That is 22% lower.
-- 84% of real primary-care charges fell inside the range the app shows.
-- 47% of estimates landed within 10% of the real charge. The baseline manages 33%.
+- Average error: $32.25, against $44.72 for the baseline (the median price per service). That is 28% lower.
+- 83% of real primary-care charges fell inside the range the app shows.
+- 52% of estimates landed within 10% of the real charge. The baseline manages 33%.
 
 56 automated tests cover the cost model, the database and the backend routes.
 
 ## Challenges we ran into
 
-- **Our first model barely beat the baseline.** Then we found that providers at the same address bill almost the same price: within 0.2% of each other, against 19.5% across the state. Teaching the model each clinic's price level gave most of the gain.
+- **Our first model barely beat the baseline.** Then we found that providers at the same clinic bill the same price: the typical gap is under 0.1%, against 19.5% across the state. Teaching the model each clinic's price level gave most of the gain.
 - **Being honest about what the data can tell us.** The data cannot tell a campus clinic from urgent care, so we removed the "care setting" picker instead of showing differences we could not back up. We also dropped one service that had too few rows.
 - **The public data API kept dropping connections,** so the data pull retries and checks its row counts against the source.
 - **Joining four people's work in the last hours.** Two services wanted the same port, records lived in two places, and the share routes had to be fixed before they would load. Everything now runs on one database.
