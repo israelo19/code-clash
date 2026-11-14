@@ -1,26 +1,39 @@
-"""A tiny records store: one JSON file on disk.
+"""A tiny records store: JSON files on disk.
+
+data/sample_records.json  = the starting records (seed). Never changed by the app.
+data/records_store.json   = the working copy that uploads are added to (not committed to git).
+POST /reset puts the working copy back to the seed, which is handy before a demo run.
 
 This is a stand-in so the AI service works on its own today. Once the backend
 (workstream B) has a real database, the web app can send the patient's
-records with each /chat request instead (see main.py), or this file can be
-changed to read from that database.
+records with each /chat request instead (see main.py).
 """
 import json
 import uuid
 from pathlib import Path
 
-DATA_FILE = Path(__file__).resolve().parent.parent / "data" / "sample_records.json"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+SEED_FILE = DATA_DIR / "sample_records.json"
+STORE_FILE = DATA_DIR / "records_store.json"
 
 
 def _load():
-    if DATA_FILE.exists():
-        return json.loads(DATA_FILE.read_text())
+    for f in (STORE_FILE, SEED_FILE):
+        if f.exists():
+            return json.loads(f.read_text())
     return {}
 
 
 def _save(all_records):
-    DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
-    DATA_FILE.write_text(json.dumps(all_records, indent=2))
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    STORE_FILE.write_text(json.dumps(all_records, indent=2))
+
+
+def reset():
+    """Throw away uploads and go back to the starting records."""
+    seed = json.loads(SEED_FILE.read_text()) if SEED_FILE.exists() else {}
+    _save(seed)
+    return {p: len(r) for p, r in seed.items()}
 
 
 def get_records(patient_id):
@@ -36,13 +49,13 @@ def add_record(patient_id, record):
 
 
 def search_records(records, query):
-    """Simple keyword search: score each record by how many query words it contains."""
+    """Simple keyword search: score each record by how many query words it contains.
+    Newer records win ties, so "my latest document" finds the most recent upload."""
     words = [w for w in query.lower().split() if len(w) > 2]
     scored = []
-    for r in records:
+    for i, r in enumerate(records):
         text = json.dumps(r).lower()
         score = sum(text.count(w) for w in words)
-        if score or not words:
-            scored.append((score, r))
-    scored.sort(key=lambda pair: pair[0], reverse=True)
-    return [r for _, r in scored[:5]]
+        scored.append((score, i, r))
+    scored.sort(key=lambda t: (t[0], t[1]), reverse=True)
+    return [r for _, _, r in scored[:5]]

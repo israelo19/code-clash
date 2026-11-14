@@ -77,6 +77,12 @@ def chat_endpoint(req: ChatRequest):
     return chat(req.message, patient_records, history)
 
 
+@app.post("/reset")
+def reset_records():
+    """Before a demo run: remove uploaded documents and go back to the starting records."""
+    return {"reset": True, "records_per_patient": store.reset()}
+
+
 @app.get("/records/{patient_id}")
 def list_records(patient_id: str):
     """Handy for testing: see what's saved for a patient."""
