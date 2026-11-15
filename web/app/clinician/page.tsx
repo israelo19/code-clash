@@ -32,7 +32,7 @@ export default function ClinicianHome() {
           </Button>
         </form>
       </Card>
-      <p className="mt-4 text-center text-xs text-slate-400">Testing tip: code DEMO01 always works.</p>
+      <p className="mt-4 text-center text-xs text-slate-400">Demo mode only: code DEMO01 always works.</p>
     </>
   );
 }

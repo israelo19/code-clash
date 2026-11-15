@@ -54,7 +54,7 @@ const STEPS = [
 
 const PRIVACY_POINTS = [
   "This demo uses synthetic records only. No real patient data.",
-  "Nothing is shared until you create a code, and every code expires.",
+  "Nothing is shared until you create a code. Every code expires, and you can end one early.",
   "Every clinician view is logged where you can see it.",
   "Prices are estimate ranges from public Medicare charge data. They are not quotes.",
 ];
@@ -210,7 +210,7 @@ export default function Home() {
       <section id="privacy" className="mx-auto max-w-5xl px-4 pt-16 md:pt-24">
         <Card className="md:p-8">
           <h2 className="text-xl font-semibold tracking-tight">Private by design</h2>
-          <p className="mt-1 text-sm text-slate-500">Designed with HIPAA in mind.</p>
+          <p className="mt-1 text-sm text-slate-500">A demo, not HIPAA compliant. Synthetic records only.</p>
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
             {PRIVACY_POINTS.map((point) => (
               <li key={point} className="flex gap-2 text-sm text-slate-700">
@@ -223,7 +223,7 @@ export default function Home() {
       </section>
 
       <footer className="px-4 pb-10 pt-12 text-center text-xs text-slate-500">
-        <p>Demo with synthetic records only. Designed with HIPAA in mind.</p>
+        <p>Demo with synthetic records only. Not HIPAA compliant: do not enter real health information.</p>
         <button
           onClick={() => {
             resetDemoData();
@@ -290,8 +290,8 @@ function CostPreview() {
   const estimates = result?.estimates ?? [];
   // The cheapest option is the one with the lowest typical price.
   const cheapest = estimates.length > 0 ? estimates.reduce((a, b) => (b.typical < a.typical ? b : a)) : null;
-  // The longest bar belongs to the most expensive option. The other bars are drawn relative to it.
-  const maxHigh = Math.max(1, ...estimates.map((e) => e.high));
+  // Each bar shows the estimated cost. The longest belongs to the most expensive option.
+  const maxTypical = Math.max(1, ...estimates.map((e) => e.typical));
 
   return (
     <div className="order-first rounded-3xl bg-gradient-to-b from-pink-600 to-rose-600 p-5 text-white shadow-2xl shadow-pink-900/30 transition duration-300 hover:-translate-y-1 md:order-none md:pb-7">
@@ -326,8 +326,10 @@ function CostPreview() {
         {cheapest ? (
           <>
             <div className="mt-5 text-center">
-              <div className="text-5xl font-semibold tracking-tight">
-                ${cheapest.low}–${cheapest.high}
+              {/* The estimated cost is the big number. The likely range sits under it. */}
+              <div className="text-5xl font-semibold tracking-tight">${cheapest.typical}</div>
+              <div className="mt-1 text-sm font-medium">
+                Likely range ${cheapest.low}–${cheapest.high}
               </div>
               <div className="mt-1 text-xs">
                 {serviceLabel(cheapest.service_code)} · Lowest: {cheapest.label}
@@ -341,7 +343,7 @@ function CostPreview() {
                     <div className="flex justify-between gap-2 text-xs">
                       <span className="truncate font-medium">{e.label}</span>
                       <span className="shrink-0 text-slate-500">
-                        ${e.low}–${e.high}
+                        <strong className="text-slate-800">${e.typical}</strong> · ${e.low}–${e.high}
                       </span>
                     </div>
                     <div className="mt-1 h-2 rounded-full bg-slate-100">
@@ -349,7 +351,7 @@ function CostPreview() {
                         className={`h-2 rounded-full transition-all duration-500 ${
                           e === cheapest ? "bg-teal-500" : "bg-pink-400"
                         }`}
-                        style={{ width: `${(e.high / maxHigh) * 100}%` }}
+                        style={{ width: `${(e.typical / maxTypical) * 100}%` }}
                       />
                     </div>
                   </li>

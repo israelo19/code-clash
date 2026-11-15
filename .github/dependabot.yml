@@ -1,0 +1,26 @@
+# Dependabot opens pull requests when a library we use has a newer version.
+# Security fixes come separately and sooner, once "Dependabot security updates"
+# is turned on in the repository settings (see SECURITY.md).
+version: 2
+updates:
+  # Backend (package.json at the top) and web app (web/package.json)
+  - package-ecosystem: "npm"
+    directories:
+      - "/"
+      - "/web"
+    schedule:
+      interval: "weekly"
+
+  # AI service and cost model. scikit-learn, pandas and numpy must match the
+  # versions that saved ai/model/cost_model.joblib, so a pull request that
+  # changes them also needs:  python ai/model/train.py
+  - package-ecosystem: "pip"
+    directory: "/ai"
+    schedule:
+      interval: "weekly"
+
+  # The actions used in .github/workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

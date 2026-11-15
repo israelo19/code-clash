@@ -35,7 +35,7 @@ test("saves a record from the document reader and gives it an id", () => {
     fields: { result: "Positive for strep" },
     summary: "Seen for a sore throat.",
   });
-  assert.match(saved.id, /^doc_[0-9a-f]{8}$/);
+  assert.match(saved.id, /^doc_[0-9a-f]{16}$/);
   assert.equal(saved.patient_id, "u_maya");
   assert.deepEqual(saved.fields, { result: "Positive for strep" });
   assert.equal(db.listDocuments("u_maya")[0].id, saved.id); // newest date, so first on the timeline

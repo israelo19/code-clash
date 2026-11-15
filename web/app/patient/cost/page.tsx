@@ -17,7 +17,10 @@ export default function CostCheck() {
   // Show "Estimating…" until the answer for the current service and ZIP arrives.
   const current = result?.key === key ? result : null;
 
+  const zipComplete = /^\d{5}$/.test(zip);
+
   useEffect(() => {
+    if (!zipComplete) return; // wait until all five digits are typed
     let cancelled = false;
     const asked = `${code}|${zip}`;
     costOptions(code, zip)
@@ -30,7 +33,7 @@ export default function CostCheck() {
     return () => {
       cancelled = true;
     };
-  }, [code, zip]);
+  }, [code, zip, zipComplete]);
 
   const options = current?.options ?? [];
   const area = options.find((o) => o.based_on === "area");
@@ -38,7 +41,7 @@ export default function CostCheck() {
 
   return (
     <>
-      <PageHeader title="What will it cost?" subtitle="See a price range before you go." />
+      <PageHeader title="What will it cost?" subtitle="See an estimated cost before you go." />
 
       <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_140px]">
         <label className="text-sm">
@@ -66,7 +69,9 @@ export default function CostCheck() {
         </label>
       </div>
 
-      {current === null ? (
+      {!zipComplete ? (
+        <p className="text-sm text-slate-500">Enter a 5-digit ZIP code.</p>
+      ) : current === null ? (
         <p className="text-sm text-slate-500">Estimating…</p>
       ) : current.error ? (
         <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-900">

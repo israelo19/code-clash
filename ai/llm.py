@@ -18,7 +18,9 @@ client = None
 if not MOCK_MODE:
     import anthropic
 
-    client = anthropic.Anthropic(api_key=API_KEY)
+    # A request that hangs is given up after 60 seconds and retried at most
+    # twice, so one stuck call cannot tie the service up or run up the bill.
+    client = anthropic.Anthropic(api_key=API_KEY, timeout=60.0, max_retries=2)
 
 
 def call_llm(messages, system=None, tools=None, tool_choice=None, max_tokens=1500):

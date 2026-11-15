@@ -5,8 +5,9 @@ import { useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { Button, Card, FieldsTable, PageHeader, TypeBadge, formatDate } from "@/components/ui";
 import { uploadAndExtract } from "@/lib/api";
-import { DEMO_USERS } from "@/lib/mockData";
 import type { HealthDocument } from "@/lib/types";
+
+const MAX_UPLOAD_BYTES = 15 * 1024 * 1024; // the same limit the backend enforces
 
 // Snap a photo or pick a file -> document reader parses it -> filed on the timeline.
 export default function Upload() {
@@ -19,10 +20,19 @@ export default function Upload() {
 
   const pick = (f: File | undefined) => {
     if (!f) return;
+    // Say so right away, before anything is sent. The backend enforces the same limit.
+    if (f.size > MAX_UPLOAD_BYTES) {
+      setFile(null);
+      setResult(null);
+      setStatus("idle");
+      setError("That file is too large. The limit is 15 MB.");
+      return;
+    }
     setFile(f);
     setResult(null);
     setError(null);
     setStatus("idle");
+    if (preview) URL.revokeObjectURL(preview); // free the previous preview
     setPreview(f.type.startsWith("image/") ? URL.createObjectURL(f) : null);
   };
 
@@ -31,7 +41,7 @@ export default function Upload() {
     setStatus("reading");
     setError(null);
     try {
-      const doc = await uploadAndExtract(DEMO_USERS.patient.id, file);
+      const doc = await uploadAndExtract(file);
       setResult(doc);
       setStatus("done");
     } catch (problem) {
@@ -45,12 +55,11 @@ export default function Upload() {
     <>
       <PageHeader title="Add a document" subtitle="Take a photo of a visit summary, lab result or form. We'll read it and file it for you." />
 
-      {/* capture="environment" opens the back camera on phones */}
+      {/* No "capture" attribute, so a phone offers the camera, the photo library and files (a PDF, say). */}
       <input
         ref={inputRef}
         type="file"
         accept="image/*,application/pdf"
-        capture="environment"
         className="hidden"
         onChange={(e) => pick(e.target.files?.[0])}
       />

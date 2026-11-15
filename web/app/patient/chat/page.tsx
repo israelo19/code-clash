@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChatBubble, PageHeader } from "@/components/ui";
 import { sendChat } from "@/lib/api";
 import { COMPANION_NAME, NOT_A_DOCTOR_LINE } from "@/lib/config";
-import { DEMO_USERS } from "@/lib/mockData";
+import { signedInUser } from "@/lib/session";
 import type { ChatMessage } from "@/lib/types";
 
 const SUGGESTIONS = ["I think I have strep. What will it cost?", "What vaccines do I have?", "What does my visit summary mean?"];
@@ -13,7 +13,7 @@ export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "companion",
-      text: `Hi Maya, I'm your ${COMPANION_NAME}. I can explain your records and estimate what care will cost. What's going on?`,
+      text: `Hi ${signedInUser()?.name.split(" ")[0] ?? "there"}, I'm your ${COMPANION_NAME}. I can explain your records and estimate what care will cost. What's going on?`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -30,9 +30,14 @@ export default function Chat() {
     setInput("");
     setMessages((m) => [...m, { role: "user", text: t }]);
     setThinking(true);
-    const reply = await sendChat(DEMO_USERS.patient.id, t);
-    setMessages((m) => [...m, reply]);
-    setThinking(false);
+    try {
+      const reply = await sendChat(t);
+      setMessages((m) => [...m, reply]);
+    } catch {
+      setMessages((m) => [...m, { role: "companion", text: "I can't answer right now. Please try again." }]);
+    } finally {
+      setThinking(false); // whatever happened, stop showing the "thinking" dots
+    }
   };
 
   return (

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { currentUser, signOut } from "@/lib/session";
+import { fetchUser, signOut } from "@/lib/session";
 import type { Role, User } from "@/lib/types";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
@@ -25,12 +25,20 @@ export function AppShell({ role, children }: { role: Role; children: React.React
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
 
+  // Ask the backend who is signed in. Nothing on these screens is shown until it
+  // answers, and anyone not signed in with the right role goes to the sign-in page.
+  // (This is for a tidy screen. The real protection is on the backend, which
+  // checks the session again on every request for data.)
   useEffect(() => {
-    const u = currentUser();
-    if (!u || u.role !== role) router.replace("/");
-    // Reading the demo account from localStorage has to happen in the browser, after the first render.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    else setUser(u);
+    let cancelled = false;
+    fetchUser().then((u) => {
+      if (cancelled) return;
+      if (!u || u.role !== role) router.replace(role === "clinician" ? "/signin/clinician" : "/signin");
+      else setUser(u);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [role, router]);
 
   if (!user) return null;
@@ -39,8 +47,8 @@ export function AppShell({ role, children }: { role: Role; children: React.React
   const isActive = (href: string) =>
     href === `/${role}` ? pathname === href : pathname === href || pathname.startsWith(href + "/");
 
-  const logout = () => {
-    signOut();
+  const logout = async () => {
+    await signOut(); // ends the session on the backend too
     router.replace("/");
   };
 

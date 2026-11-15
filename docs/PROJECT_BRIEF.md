@@ -1,5 +1,9 @@
 # Health companion app: project brief
 
+> **Kept for history.** This is the plan the team started the hackathon with on November 14, 2026. Not everything
+> in it was built. In particular the app has no encrypted storage and is not HIPAA compliant, and the demo records
+> were written by hand, not generated. For what the app really does today, see `README.md` and `SECURITY.md`.
+
 CODE/CLASH 2026, Towson University. Saturday, November 14, 2026.
 Working title only. App name and companion name are still open.
 
@@ -40,8 +44,8 @@ Community & Social Impact for now. Switch to AI & Data at 4:00 PM if the trained
 
 Our users are students and young adults who have just started managing their own healthcare, often without a parent keeping track for them.
 
-- **They skip care over cost.** 36% of adults skipped or postponed care they needed in the past year because of cost. Source: KFF, April 2026.
-- **Affordability is falling fastest for our age group.** The share of 18 to 29 year olds who could afford care fell from 46% in 2021 to 32% in 2025. Source: Gallup and West Health survey.
+- **They skip care over cost.** 40% of adults under 30 skipped or postponed care they needed in the past year because of cost. For all adults it is 28%. Source: KFF, updated October 23, 2026.
+- **Affordability is falling fastest for our age group.** The share of 18 to 29 year olds that Gallup classifies as "Cost Secure" (they can get quality care and have recently been able to pay for care and medicine) fell from 46% in 2021 to 32% in 2025. Source: Gallup and West Health, June 2026.
 - **They can't see the price first.** A sore throat could mean the campus health center, a retail clinic, urgent care or an ER, and the bills are very different.
 - **Their paperwork is scattered.** Visit summaries, lab results and immunization records sit on paper and in separate portals, and schools and employers keep asking for them.
 
@@ -301,8 +305,9 @@ Presentation format: 4 minutes to present and demo live, then 2 minutes of judge
 
 ## 13. Sources
 
-- KFF, Americans' Challenges with Health Care Costs, updated April 30, 2026: https://www.kff.org/health-costs/report/americans-challenges-with-health-care-costs/
-- Straight Arrow News on the Gallup and West Health affordability survey: https://san.com/cc/in-a-5-year-low-most-americans-say-they-can-no-longer-afford-healthcare/
+- KFF, Americans' Challenges with Health Care Costs, updated October 23, 2026: https://www.kff.org/health-costs/report/americans-challenges-with-health-care-costs/
+- Gallup with West Health, U.S. Adults' Ability to Afford Healthcare at a Five-Year Low, June 17, 2026: https://news.gallup.com/poll/710942/adults-ability-afford-healthcare-five-year-low.aspx
+- All sources for the video and the slides, checked on November 14, 2026: `docs/VIDEO_SCRIPT.md`
 - CMS dataset, Medicare Physician & Other Practitioners by Provider and Service: https://data.cms.gov/provider-summary-by-type-of-service/medicare-physician-other-practitioners/medicare-physician-other-practitioners-by-provider-and-service
 - Synthea synthetic patient generator: https://github.com/synthetichealth/synthea
 - CODE/CLASH Devpost: https://code-clash.devpost.com/

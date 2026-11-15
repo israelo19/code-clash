@@ -98,7 +98,8 @@ export function FieldsTable({ fields }: { fields: Record<string, string> }) {
   );
 }
 
-// Low / typical / high price card. Always labeled as an estimate.
+// Price card: the estimated cost in large type, with the likely range under it.
+// Always labeled as an estimate.
 export function CostRangeCard({ estimate, highlight = false }: { estimate: Estimate; highlight?: boolean }) {
   const { low, typical, high } = estimate;
   const pct = ((typical - low) / (high - low || 1)) * 100;
@@ -111,10 +112,13 @@ export function CostRangeCard({ estimate, highlight = false }: { estimate: Estim
         </div>
         {highlight && <span className="shrink-0 rounded-full bg-teal-600 px-2 py-0.5 text-xs font-medium text-white">Lowest</span>}
       </div>
-      <div className="mt-2 text-2xl font-semibold">
-        ${low}–${high}
+      <div className="mt-2 flex items-baseline gap-2">
+        <span className="text-3xl font-semibold">${typical}</span>
+        <span className="text-xs font-medium text-slate-500">estimated cost</span>
       </div>
-      <div className="text-xs text-slate-500">Typical about ${typical}</div>
+      <div className="text-sm text-slate-600">
+        Likely range ${low}–${high}
+      </div>
       <div className="relative mt-3 h-2 rounded-full bg-gradient-to-r from-emerald-200 via-amber-200 to-rose-200">
         <div className="absolute top-1/2 h-4 w-1 -translate-y-1/2 rounded bg-slate-800" style={{ left: `${pct}%` }} />
       </div>

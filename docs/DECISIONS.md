@@ -1,10 +1,10 @@
 # Cost model: what changed from the brief
 
-Workstream D update, Saturday November 14, 1:25 PM. This replaces the 12:10 PM version.
+Workstream D update, Saturday November 14, 5:00 PM. This replaces the 1:25 PM version.
 
-The cost model is trained, tested and a lot stronger than it was at noon. On providers it never saw, its average error is $34.93 against $44.72 for the simple baseline, which is 22% better. The noon version was 11% better. The gain came from one finding: prices are set by the clinic, so the model now uses the clinic's own price level when it knows the clinic.
+The cost model is trained, tested and stronger again. On providers it never saw, its average error is $32.25 against $44.72 for the simple baseline, which is 28% better. The 1:25 PM version was 22% better and the noon version 11%. The gain came from one finding: prices are set by the clinic. At 5:00 PM we added the suite line of the address, which tells apart practices that share a building, and the model now starts from what the closest peers charge.
 
-The `/estimate` endpoint is still not built. The functions it will call are ready and tested.
+The app now shows the estimated cost in large type with the likely range under it. The `/estimate` endpoint is built and uses the functions below.
 
 ## Changes that affect other workstreams
 
@@ -22,8 +22,8 @@ What this needs from others:
 
 Limits to know:
 
-- A clinic is a street address plus ZIP. The CMS data has no clinic names, so the list shows addresses. A large medical building can hold several unrelated practices under one address.
-- About 72% of held-out rows were at a clinic the model knows. For the rest it falls back to the area estimate.
+- A clinic is a street address, suite and ZIP. The CMS data has no clinic names, so the list shows addresses. The suite separates practices that share a building. About a third of rows have a suite line; where there is none, one address can still hold several practices.
+- About 57% of held-out rows were at a clinic the model knows. For the rest the app falls back to the area estimate.
 
 ### 2. A visit can be priced by name, with a total.
 
@@ -61,7 +61,7 @@ A patient does not know who they will see. When no provider type is passed, the 
 The model predicts what providers billed Medicare in 2024, which is more than double what Medicare allows. For an established-patient office visit the median Maryland charge is $195 and the median Medicare allowed amount is about $88.
 
 - UI wording: label the range as a billed price before insurance, next to the estimate label.
-- Strep test prices cluster at two points (about $32 and $58), so show the range, not only the typical price.
+- Strep test prices cluster at two points (about $32 and $58), so the app always shows the likely range under the estimated cost.
 
 ## What we tested, in order (for the deck)
 
@@ -78,7 +78,8 @@ Charts are in `docs/charts/`. Every number below is in `ai/model/metrics.json` o
 | + office or facility | $43.11 |
 | + region (first 3 ZIP digits) | $41.59 |
 | + provider type | $39.00 |
-| + the clinic's own price level | $33.22 |
+| + price level at the same street address | $33.22 |
+| + suite, building and ZIP price levels | $31.24 |
 
 **Step 3. Try to improve it the usual ways.** None of these helped much, so none were kept.
 
@@ -88,32 +89,41 @@ Charts are in `docs/charts/`. Every number below is in `ai/model/metrics.json` o
 | Deeper trees | 1.1% lower |
 | Twice as many boosting rounds | 0.5% lower |
 
+At 5:00 PM we also tried two things in scratch tests that are not in the scripts: using four more office-visit codes to learn each clinic's price level (0.4% lower), and three more provider columns (no change). Neither was kept.
+
 **Step 4. Ask whether more data would help.** Chart `2_would_more_data_help.png`. Going from half the training providers to all of them improved the area model by 1%, so more of the same data was not the answer.
 
-**Step 5. Find what does drive the price.** Providers at the same street address bill within 0.2% of each other for the same service. Across the state the typical spread is 20%. So we gave the model the clinic's price level, worked out only from the other providers at that address, never from the provider being predicted. This is the last row of the table in step 2. The same chart shows this clinic model still improving as data grows (7% from half to all), so more years of CMS data are the next thing to add.
+**Step 5. Find what does drive the price.** Providers at the same clinic bill the same price for the same service: the typical gap is under 0.1%. Across the state the typical spread is 20%. So we gave the model the price levels around a provider, worked out only from other providers, never from the provider being predicted.
+
+- First the street address. This is the sixth row of the table in step 2.
+- Then, at 5:00 PM, the suite line of the address, plus the building and the 5-digit ZIP. A third of the remaining error was at street addresses where several practices charge different prices, and the suite tells them apart. This is the last row.
+- The model now starts from what the closest peers charge and learns only the correction. Trees predict in steps, so on their own they could only roughly copy a peer's price.
+
+The chart for step 4 shows this model still improving as data grows (11% from half to all), so more years of CMS data are the next thing to add.
 
 **Step 6. Run the final test once, on the 1,941 providers held out from the start.** Charts `3_final_test_by_service.png` and `5_how_close_are_estimates.png`.
 
-| Measure, all 3,152 held-out rows | Baseline | Area model (noon) | Final model |
-| --- | --- | --- | --- |
-| Average error | $44.72 | $39.79 | $34.93 |
-| Median error, as a share of the real charge | 19.1% | 16.2% | 11.5% |
-| Estimates within 10% of the real charge | 33% | 37% | 47% |
+| Measure, all 3,152 held-out rows | Baseline | Area model (noon) | 1:25 PM model | Final model |
+| --- | --- | --- | --- | --- |
+| Average error | $44.72 | $39.79 | $34.93 | $32.25 |
+| Median error, as a share of the real charge | 19.1% | 16.2% | 11.5% | 8.8% |
+| Estimates within 10% of the real charge | 33% | 37% | 47% | 52% |
 
-- When the clinic is in our data (2,259 rows), the median error is 8.2% against the baseline's 18.1%.
-- When it is not (893 rows), the model is the area model: 19.2% against the baseline's 25.0%.
-- The biggest gain is the strep test: median error 8.8% against the baseline's 31.0%.
+- When the clinic is in our data (1,800 rows), the median error is 0.7% against the baseline's 17.5%.
+- When it is not (1,352 rows), the model still knows the street address, building and ZIP price levels, but they help little: 18.4% against the baseline's 25.0%.
+- The biggest gain is the strep test: median error 7.0% against the baseline's 31.0%.
+- The held-out providers have now been scored twice, at 1:25 PM and at 5:00 PM. The 5:00 PM change was chosen by cross-validation on the training providers (step 2), not by looking at this test.
 
-**Step 7. Check the range the app shows.** Chart `4_range_check.png`. On 1,645 held-out primary-care rows with the provider type left out, as in the app, 84% of real charges fell inside the range. The goal is 80%, and every service clears it.
+**Step 7. Check the range the app shows.** Chart `4_range_check.png`. On 1,645 held-out primary-care rows with the provider type left out, as in the app, 83% of real charges fell inside the range. The goal is 80%. Five of the six services clear it, and new-patient office visits are at 79.9%.
 
-**Step 8. Check the visit totals.** 561 held-out providers bill both an office visit and an add-on such as a strep test, so their real totals are known. The added-up range contained the real total 97% of the time, and the typical price was a median of 5.5% off. The total range is wider than it needs to be, which is the safe direction.
+**Step 8. Check the visit totals.** 561 held-out providers bill both an office visit and an add-on such as a strep test, so their real totals are known. The added-up range contained the real total 93% of the time, and the typical price was a median of 4.0% off. The total range is wider than it needs to be, which is the safe direction.
 
 **Step 9. Automated checks.** 38 tests in `ai/tests/` confirm the estimates behave: low is never above high, totals add up, a clinic from the nearby list can be priced, and bad input gives a clear error.
 
 Things to say plainly if a judge asks:
 
 - The clinic estimate works only for clinics already in the data. It is closer to "what did this clinic bill others" than to a prediction from scratch.
-- With the provider type passed in, the range holds 76% of real charges, under the 80% goal. The app does not pass it.
+- With the provider type passed in, the range holds 77% of real charges, under the 80% goal. The app does not pass it.
 - These are charges billed to Medicare, not what a student's insurance pays.
 
 For the 4:00 PM track choice: D's view is that the model can now support an AI & Data pitch, since it has a baseline, a tested progression and a real finding. Decide on the whole demo, not the model alone.
@@ -144,8 +154,8 @@ Demo numbers for Maya in Towson. Use ZIP 21204; the university's own ZIP, 21252,
 | Strep visit, new patient, area estimate | $187 | $319 | $434 |
 | Strep visit, established patient, area estimate | $135 | $249 | $345 |
 | Strep test alone, area estimate | $18 | $50 | $58 |
-| Strep test at 600 E Belvedere Ave, Baltimore | $15 | $20 | $52 |
-| Strep test at 5230 Campbell Blvd, Nottingham | $24 | $28 | $53 |
+| Strep test at 600 E Belvedere Ave Ste A, Baltimore | $18 | $19 | $31 |
+| Strep test at 5230 Campbell Blvd, Nottingham | $22 | $25 | $49 |
 
 ## Setup
 
