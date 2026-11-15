@@ -1,0 +1,79 @@
+# Runs the tests and checks on every pull request and on every push to main.
+#
+# Safety notes:
+# - "pull_request" (not "pull_request_target") runs code from forks with a
+#   read-only token and no secrets, so a hostile pull request gains nothing.
+# - The workflow needs no secrets at all. Tests run in mock mode and never call the paid API.
+# - Each action is pinned to a full commit ID, so it cannot change underneath us.
+#   The comment after it is the release that ID belongs to. Dependabot proposes updates.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# The token this workflow gets can only read the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Known vulnerabilities in backend libraries
+        run: npm audit --audit-level=high
+
+  web:
+    name: Web app checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm run build
+      - name: Known vulnerabilities in the libraries that ship with the web app
+        run: npm audit --omit=dev --audit-level=high
+
+  ai:
+    name: AI service and cost model tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: ai/requirements.txt
+      - run: pip install -r ai/requirements.txt
+      - run: python -m pytest ai/tests

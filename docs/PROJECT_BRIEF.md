@@ -1,5 +1,9 @@
 # Health companion app: project brief
 
+> **Kept for history.** This is the plan the team started the hackathon with on November 14, 2026. Not everything
+> in it was built. In particular the app has no encrypted storage and is not HIPAA compliant, and the demo records
+> were written by hand, not generated. For what the app really does today, see `README.md` and `SECURITY.md`.
+
 CODE/CLASH 2026, Towson University. Saturday, November 14, 2026.
 Working title only. App name and companion name are still open.
 
