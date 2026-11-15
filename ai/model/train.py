@@ -38,7 +38,7 @@ from features import (
     load_data,
     price_reference,
 )
-from predict import MODEL_PATH, clinics_near, estimate_visit, predict_ranges, predict_ranges_any_primary_care
+from predict import CHECKSUM_PATH, MODEL_PATH, clinics_near, estimate_visit, file_checksum, predict_ranges, predict_ranges_any_primary_care
 
 METRICS_PATH = Path(__file__).parent / "metrics.json"
 PREDICTIONS_PATH = Path(__file__).parent / "test_predictions.csv"
@@ -346,6 +346,9 @@ def main():
         },
         MODEL_PATH,
     )
+    # The fingerprint of the file we just saved. predict.py refuses to load a
+    # model file that does not match it.
+    CHECKSUM_PATH.write_text(f"{file_checksum(MODEL_PATH)}  {MODEL_PATH.name}\n")
 
     print(f"Trained on {len(train)} rows, tested on {len(test)} rows from providers the model never saw.")
     known_type = metrics["provider_type_known"]

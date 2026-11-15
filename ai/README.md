@@ -1,21 +1,24 @@
 # AI service (workstream C)
 
-A Python FastAPI service with the document reader and the companion chat.
-The web app calls it over HTTP.
+A Python FastAPI service with the document reader, the companion chat and the cost estimates.
+
+**It is internal.** Only the backend (`../App.js`) calls it. It holds the paid API key, so it refuses everyone
+else: with `AI_SERVICE_TOKEN` set, a caller must send that token in an `X-Internal-Token` header; with no token
+set, only callers on the same machine are answered. Browsers never call it, so it sends no CORS headers. See
+`../SECURITY.md`.
 
 ## Run it
 
+Set up the Python environment and `.env` as the README at the top of the repo describes, then:
+
 ```bash
 cd ai
-python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env             # then paste your API key into .env (or leave empty for mock mode)
-uvicorn main:app --reload --port 8000
+../.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
-Open http://localhost:8000/docs to try every endpoint in the browser.
 http://localhost:8000/health shows whether you're in mock mode.
+While developing, start it with `AI_DOCS=1` in front to get FastAPI's test page at http://localhost:8000/docs.
+The test page is off otherwise, because it lists every endpoint.
 
 **Mock mode:** with no API key, every endpoint still works but returns fake answers
 labeled "MOCK". The web team can build against it right away.
@@ -24,18 +27,19 @@ labeled "MOCK". The web team can build against it right away.
 
 | File | What it does |
 | --- | --- |
-| `main.py` | The endpoints: `/extract`, `/estimate`, `/clinics`, `/services`, `/chat`, plus `/health` and `/records/{patient_id}` |
-| `extract.py` | Document reader. Sends the photo to Claude and forces a `save_record` tool call, so the output is always clean JSON |
-| `companion.py` | Companion agent. The system prompt holds the rules, and the agent loop runs the two tools |
-| `records.py` | Stores records in `../data/sample_records.json` and does a simple keyword search |
+| `main.py` | The endpoints: `/extract`, `/estimate`, `/clinics`, `/services`, `/chat`, plus `/health`. Also who may call them, and the size limits |
+| `extract.py` | Document reader. Opens only ordinary photo types and PDFs, asks Claude to call a `save_record` tool, then keeps only the expected fields at fixed lengths |
+| `companion.py` | Companion agent. The system prompt holds the rules, and the agent loop runs the two read-only tools |
+| `records.py` | A simple keyword search over the records the backend sends. Stores nothing |
 | `estimate_stub.py` | Cost estimates from the trained model in `model/` (workstream D). The file name is left over from the placeholder |
 | `llm.py` | The only file that talks to the LLM API |
 
-## Endpoints (for the web team)
+## Endpoints (called by the backend)
 
-**POST /extract**: form-data with `file` (JPG/PNG/WEBP/GIF/PDF) and optional `patient_id`
+**POST /extract**: form-data with `file` (a JPEG, PNG, WebP or HEIC photo, or a PDF; 15 MB at most). Nothing is
+stored here. The backend gives the record its id and saves it.
 ```json
-{"id": "doc_ab12cd34", "type": "visit_summary", "date": "2026-11-14", "provider": "...",
+{"type": "visit_summary", "date": "2026-11-14", "provider": "...",
  "fields": {"result": "Positive for strep"}, "summary": "..."}
 ```
 
@@ -61,19 +65,20 @@ labeled "MOCK". The web team can build against it right away.
 **GET /clinics?service_code=87880&zip_code=21204&limit=5**: known clinics nearby, cheapest first
 ```json
 [{"clinic": {"id": "...", "address": "600 E Belvedere Ave Ste A", "city": "Baltimore", "zip": "21212", "providers_in_data": 2},
-  "service_code": "87880", "low": 15, "typical": 20, "high": 52, "based_on": "clinic", "caveat": "..."}]
+  "service_code": "87880", "low": 18, "typical": 19, "high": 31, "based_on": "clinic", "caveat": "..."}]
 ```
 
 **GET /services**: the services and visits the model can price, for menus
 
 **POST /chat**
 ```json
-// in  (records is optional: send them if the backend keeps them in its own database)
+// in  (the backend sends the signed-in patient's records. Left out, the synthetic sample records for "maya" are used)
 {"message": "How much is a strep test?", "patient_id": "maya", "history": [], "records": null}
 // out
 {"reply": "...", "used_records": ["doc_imm001"], "used_estimates": [ ... ]}
 ```
 `history` is the earlier messages, as `[{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]`.
+Only those two roles are accepted, at most 20 turns. `message` is 2,000 characters at most.
 
 ## Demo test questions
 
@@ -82,8 +87,9 @@ labeled "MOCK". The web team can build against it right away.
 - (after uploading a visit summary) "What does my visit summary mean?"
 - "I can't breathe and my chest hurts" (should point to 911 or the ER right away)
 
-## Disclosures for the main README
+## Good to know
 
-- Anthropic Claude API (document reading and companion chat)
-- FastAPI, Uvicorn, python-dotenv, python-multipart
-- Sample records in `data/sample_records.json` are synthetic, not real patient data
+- Uploaded documents and chat messages are sent to the Anthropic API to be read and answered.
+- `model/cost_model.joblib` is a Python pickle. It is only loaded if it matches the fingerprint in
+  `model/cost_model.sha256`, which `model/train.py` writes. Never load a model file from someone you do not trust.
+- Sample records in `data/sample_records.json` are synthetic, not real patient data.
