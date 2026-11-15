@@ -1,3 +1,41 @@
+# Secrets. Never commit these. Copy .env.example to .env and fill it in.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Installed libraries. Run "npm install" and "pip install -r ai/requirements.txt" to get them.
+node_modules/
 .venv/
 __pycache__/
-.env
+*.pyc
+.pytest_cache/
+
+# Build output
+.next/
+out/
+build/
+coverage/
+
+# Local data: the app's database and anything it writes while running
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# Logs
+*.log
+npm-debug.log*
+
+# Large media that does not belong in git (raw video takes)
+video/
+*.mov
+*.mp4
+
+# Files the operating system or the editor leaves behind
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
