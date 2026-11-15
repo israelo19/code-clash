@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, Card, PageHeader, TypeBadge, formatDate } from "@/components/ui";
-import { createShare, listAccessLog, listDocuments, listShares } from "@/lib/api";
-import { DEMO_USERS } from "@/lib/mockData";
+import { createShare, listAccessLog, listDocuments, listShares, revokeShare } from "@/lib/api";
 import type { AccessLogEntry, HealthDocument, Share } from "@/lib/types";
 
 const EXPIRY_OPTIONS = [
@@ -14,7 +13,6 @@ const EXPIRY_OPTIONS = [
 
 // Patient picks records -> gets a code that expires -> sees who viewed what.
 export default function SharePage() {
-  const patientId = DEMO_USERS.patient.id;
   const [docs, setDocs] = useState<HealthDocument[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [minutes, setMinutes] = useState(60);
@@ -22,30 +20,47 @@ export default function SharePage() {
   const [shares, setShares] = useState<Share[]>([]);
   const [log, setLog] = useState<AccessLogEntry[]>([]);
   const [now, setNow] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const refresh = () => {
-    listShares(patientId).then((s) => {
+    listShares().then((s) => {
       setShares(s);
       setNow(Date.now());
     });
-    listAccessLog(patientId).then(setLog);
+    listAccessLog().then(setLog);
   };
 
   useEffect(() => {
-    listDocuments(patientId).then(setDocs);
+    listDocuments().then(setDocs);
     refresh();
     // Poll so the access log updates live while a clinician opens the code in another tab.
     const t = setInterval(refresh, 3000);
     return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
   const create = async () => {
-    const share = await createShare(patientId, selected, minutes);
-    setNewShare(share);
-    setSelected([]);
+    setError(null);
+    try {
+      const share = await createShare(selected, minutes);
+      setNewShare(share);
+      setSelected([]);
+    } catch (problem) {
+      setError((problem as Error).message);
+    }
+    refresh();
+  };
+
+  // End a code now. The clinician can no longer open it.
+  const revoke = async (code: string) => {
+    setError(null);
+    try {
+      await revokeShare(code);
+      if (newShare?.code === code) setNewShare(null);
+    } catch (problem) {
+      setError((problem as Error).message);
+    }
     refresh();
   };
 
@@ -105,6 +120,7 @@ export default function SharePage() {
       <Button onClick={create} disabled={selected.length === 0} className="mb-8 w-full">
         Create share code
       </Button>
+      {error && <p className="-mt-5 mb-8 rounded-xl bg-rose-50 p-3 text-sm text-rose-900">{error}</p>}
 
       <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Your codes</h2>
       {shares.length === 0 ? (
@@ -117,8 +133,13 @@ export default function SharePage() {
                 <span className="font-mono font-semibold tracking-widest">{s.code}</span>
                 <div className="text-xs text-slate-500">{s.document_ids.map(docName).join(", ")}</div>
               </div>
-              <span className={`text-xs ${isExpired(s) ? "text-slate-400" : "text-emerald-700"}`}>
-                {isExpired(s) ? "Expired" : "Active"}
+              <span className="flex shrink-0 items-center gap-3 text-xs">
+                <span className={isExpired(s) ? "text-slate-400" : "text-emerald-700"}>{isExpired(s) ? "Ended" : "Active"}</span>
+                {!isExpired(s) && (
+                  <button onClick={() => revoke(s.code)} className="font-medium text-rose-700 hover:underline">
+                    Stop sharing
+                  </button>
+                )}
               </span>
             </Card>
           ))}

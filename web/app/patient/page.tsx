@@ -5,25 +5,25 @@ import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { NoteItem, PageHeader, TimelineItem } from "@/components/ui";
 import { listDocuments, listNotes } from "@/lib/api";
-import { DEMO_USERS } from "@/lib/mockData";
+import { signedInUser } from "@/lib/session";
 import type { ClinicianNote, HealthDocument } from "@/lib/types";
 
 type Entry = { kind: "doc"; date: string; doc: HealthDocument } | { kind: "note"; date: string; note: ClinicianNote };
 
 // Patient dashboard: quick actions + the records timeline (documents and clinician notes, newest first).
 export default function PatientHome() {
-  const patient = DEMO_USERS.patient;
+  const firstName = signedInUser()?.name.split(" ")[0] ?? "";
   const [entries, setEntries] = useState<Entry[] | null>(null);
 
   useEffect(() => {
-    Promise.all([listDocuments(patient.id), listNotes(patient.id)]).then(([docs, notes]) => {
+    Promise.all([listDocuments(), listNotes()]).then(([docs, notes]) => {
       const all: Entry[] = [
         ...docs.map((doc) => ({ kind: "doc" as const, date: doc.date, doc })),
         ...notes.map((note) => ({ kind: "note" as const, date: note.created_at.slice(0, 10), note })),
       ];
       setEntries(all.sort((a, b) => b.date.localeCompare(a.date)));
     });
-  }, [patient.id]);
+  }, []);
 
   const actions = [
     { href: "/patient/chat", label: "Ask the companion", icon: "chat" },
@@ -34,7 +34,7 @@ export default function PatientHome() {
 
   return (
     <>
-      <PageHeader title={`Hi, ${patient.name.split(" ")[0]}`} subtitle="Your health records, all in one place." />
+      <PageHeader title={firstName ? `Hi, ${firstName}` : "Hi"} subtitle="Your health records, all in one place." />
 
       <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {actions.map((a) => (

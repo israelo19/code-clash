@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { Button, Card, FieldsTable, PageHeader, TypeBadge, formatDate } from "@/components/ui";
 import { addNote, openShare, type OpenShareResult } from "@/lib/api";
-import { DEMO_USERS } from "@/lib/mockData";
 
 // The packet of records the patient chose to share, plus "add a visit note".
 export default function SharedView() {
@@ -14,12 +13,13 @@ export default function SharedView() {
   const [result, setResult] = useState<OpenShareResult | null>(null);
   const [note, setNote] = useState("");
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const opened = useRef(false);
 
   useEffect(() => {
     if (opened.current) return; // avoid double-logging in React dev mode
     opened.current = true;
-    openShare(code, DEMO_USERS.clinician.id).then(setResult);
+    openShare(code).then(setResult);
   }, [code]);
 
   const back = (
@@ -37,17 +37,24 @@ export default function SharedView() {
         <Card className="border-rose-200 bg-rose-50 text-sm text-rose-900">
           {result.reason === "expired"
             ? "This code has expired. Ask the patient for a new one."
-            : result.reason === "unavailable"
-              ? "Can't open the code right now. Is the backend running on port 4000?"
+            : result.reason === "too_many"
+              ? "Too many codes tried. Wait a few minutes and try again."
+              : result.reason === "unavailable"
+                ? "Can't open the code right now. Is the backend running?"
               : "That code wasn't found."}
         </Card>
       </>
     );
 
   const save = async () => {
-    await addNote(result.share.patient_id, DEMO_USERS.clinician.id, note.trim());
-    setNote("");
-    setSaved(true);
+    setSaveError(null);
+    try {
+      await addNote(result.share.patient_id, note.trim());
+      setNote("");
+      setSaved(true);
+    } catch (problem) {
+      setSaveError((problem as Error).message); // for example, the share has expired
+    }
   };
 
   return (
@@ -62,7 +69,10 @@ export default function SharedView() {
           minute: "2-digit",
         })}`}
       />
-      <p className="-mt-3 mb-5 text-xs text-slate-500">This view was recorded in the patient&apos;s access log.</p>
+      <p className="-mt-3 mb-5 text-xs text-slate-500">
+        This view was recorded in the patient&apos;s access log. These records were read from the patient&apos;s own photos by
+        AI and have not been checked against the originals.
+      </p>
 
       <div className="mb-8 flex flex-col gap-4">
         {result.documents.map((d) => (
@@ -96,6 +106,7 @@ export default function SharedView() {
             Save to patient timeline
           </Button>
           {saved && <span className="text-sm text-emerald-700">Saved ✓</span>}
+          {saveError && <span className="text-sm text-rose-700">{saveError}</span>}
         </div>
       </Card>
     </>

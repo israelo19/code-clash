@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { checkLogin } from "@/lib/api";
 import { DEMO_LOGINS } from "@/lib/mockData";
-import { signIn } from "@/lib/session";
 import type { Role } from "@/lib/types";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
@@ -15,8 +14,8 @@ import { Button } from "./ui";
 //   /signin            -> patient   (app/signin/page.tsx)
 //   /signin/clinician  -> clinician (app/signin/clinician/page.tsx)
 // The email and password boxes start filled in with the demo account, so one tap on "Sign in" is enough.
-// checkLogin() in lib/api.ts decides if the details are right. If they are, we remember the role
-// (lib/session.ts) and open that side of the app.
+// checkLogin() in lib/api.ts asks the backend if the details are right. If they are, the backend
+// starts a session (a cookie the browser keeps) and we open that side of the app.
 
 // The words that change between the patient and the clinician version.
 const COPY: Record<Role, { headline: string; subtitle: string; points: { icon: string; text: string }[] }> = {
@@ -66,7 +65,6 @@ export function SignInForm({ role }: { role: Role }) {
         setStatus("wrong");
         return;
       }
-      signIn(role); // remember who is signed in
       router.push(`/${role}`); // open the patient or clinician side
     } catch {
       setStatus("failed");
@@ -185,7 +183,7 @@ export function SignInForm({ role }: { role: Role }) {
 
             {status === "wrong" && (
               <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-800">
-                That email and password do not match the demo account.
+                That email and password do not match an account.
               </p>
             )}
             {status === "failed" && (
@@ -207,7 +205,7 @@ export function SignInForm({ role }: { role: Role }) {
           </button>
 
           <p className="mt-5 border-t border-slate-100 pt-4 text-center text-xs text-slate-500">
-            Demo sign-in with synthetic records only. Designed with HIPAA in mind.
+            Demo with synthetic records only. Not HIPAA compliant: do not enter real health information.
           </p>
         </section>
       </div>
