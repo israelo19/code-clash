@@ -34,11 +34,16 @@ SERVICES = {
     "85025": "Complete blood count",
 }
 
-# We keep only the columns the model needs. Provider names are dropped. The NPI
-# stays because the train/test split is done by provider, and the street address
-# stays because providers at the same address turn out to bill the same prices.
-# The second address line (usually a suite number) stays too: it tells apart
-# practices that share a building but charge different prices.
+# We keep only the columns the model needs.
+# - The provider name columns are dropped. A few address lines still contain a
+#   name, because that is how the practice wrote its address in the CMS data.
+# - The NPI (provider number) stays because the train/test split is done by provider.
+# - The street address stays because providers at the same address turn out to
+#   bill the same prices. The second address line (usually a suite number) tells
+#   apart practices that share a building but charge different prices.
+# - The description of each service code (HCPCS_Desc) is left out on purpose:
+#   the wording for CPT codes belongs to the American Medical Association, so we
+#   do not copy it into this repo. Our own short labels are in SERVICES above.
 KEEP_COLUMNS = [
     "Rndrng_NPI",
     "Rndrng_Prvdr_Type",
@@ -48,7 +53,6 @@ KEEP_COLUMNS = [
     "Rndrng_Prvdr_City",
     "Rndrng_Prvdr_Zip5",
     "HCPCS_Cd",
-    "HCPCS_Desc",
     "Place_Of_Srvc",
     "Tot_Benes",
     "Tot_Srvcs",
