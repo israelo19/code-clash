@@ -56,6 +56,9 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+      # Next.js writes some types (such as LayoutProps) into .next/types. A fresh
+      # copy of the repository does not have them yet, so make them before the typecheck.
+      - run: npx next typegen
       - run: npx tsc --noEmit
       - run: npm run lint
       - run: npm run build

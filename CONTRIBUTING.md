@@ -17,7 +17,7 @@ Thanks for looking. CareVault is a small demo project, so the process is light.
    ```bash
    npm test
    .venv/bin/python -m pytest ai/tests
-   (cd web && npx tsc --noEmit && npm run lint && npm run build)
+   (cd web && npx next typegen && npx tsc --noEmit && npm run lint && npm run build)
    ```
 
 5. Open a pull request that says what changed and why.
