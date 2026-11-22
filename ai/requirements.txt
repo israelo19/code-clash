@@ -19,7 +19,7 @@ httpx==0.28.1
 # The AI service.
 fastapi==0.163.0
 uvicorn[standard]==0.54.0
-python-multipart==0.0.33
+python-multipart==0.0.34
 anthropic==2.8.0
 python-dotenv==1.2.4
 pillow==13.0.0
